@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GitHub File Explorer</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            font-family: Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .repo-info {
+            color: #8b949e;
+            margin-bottom: 20px;
+        }
+
+        .tree {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        ul ul {
+            padding-left: 24px;
+        }
+
+        li {
+            margin: 2px 0;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            padding: 7px 8px;
+
+            border-radius: 5px;
+
+            cursor: pointer;
+
+            user-select: none;
+        }
+
+        .item:hover {
+            background: #21262d;
+        }
+
+        .arrow {
+            width: 16px;
+            color: #8b949e;
+            transition: transform 0.15s;
+        }
+
+        .folder.open > .item .arrow {
+            transform: rotate(90deg);
+        }
+
+        .icon {
+            width: 20px;
+        }
+
+        .folder-name {
+            color: #79c0ff;
+        }
+
+        .file-name {
+            color: #c9d1d9;
+        }
+
+        .children {
+            display: none;
+        }
+
+        .folder.open > .children {
+            display: block;
+        }
+
+        .loading {
+            color: #8b949e;
+        }
+
+        .error {
+            color: #f85149;
+        }
+
+        .file-info {
+            margin-top: 20px;
+
+            background: #161b22;
+            border: 1px solid #30363d;
+
+            border-radius: 8px;
+
+            padding: 15px;
+
+            display: none;
+        }
+
+        .file-info h3 {
+            margin-top: 0;
+        }
+
+        .file-info a {
+            color: #58a6ff;
+        }
+
+        .size {
+            color: #8b949e;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>📂 GitHub File Explorer</h1>
+
+    <div class="repo-info">
+        Repository:
+        <strong>dang129/cars</strong>
+        /
+        <strong>downloads</strong>
+    </div>
+
+    <div id="tree" class="tree">
+        <div class="loading">
+            ⏳ Đang tải...
+        </div>
+    </div>
+
+    <div id="fileInfo" class="file-info"></div>
+
+</div>
+
+
+<script>
+
+
+// ============================================================
+// CẤU HÌNH
+// ============================================================
+
+const owner = "dang129";
+
+const repo = "cars";
+
+const rootPath = "downloads";
+
+
+// ============================================================
+// GitHub API
+// ============================================================
+
+async function getGitHubContents(path) {
+
+    const encodedPath = path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+
+    const url =
+        `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+
+        throw new Error(
+            `GitHub API trả về HTTP ${response.status}`
+        );
+
+    }
+
+    return await response.json();
+}
+
+
+// ============================================================
+// LOAD ROOT FOLDER
+// ============================================================
+
+async function loadRoot() {
+
+    const tree = document.getElementById("tree");
+
+    try {
+
+        const items = await getGitHubContents(rootPath);
+
+        tree.innerHTML = "";
+
+        const ul = document.createElement("ul");
+
+        sortItems(items);
+
+        for (const item of items) {
+
+            const li = createItem(item);
+
+            ul.appendChild(li);
+
+        }
+
+        tree.appendChild(ul);
+
+    } catch (error) {
+
+        tree.innerHTML = `
+            <div class="error">
+                ❌ Không thể tải thư mục
+                <br>
+                ${escapeHtml(error.message)}
+            </div>
+        `;
+
+    }
+
+}
+
+
+// ============================================================
+// CREATE FILE / FOLDER ITEM
+// ============================================================
+
+function createItem(item) {
+
+    const li = document.createElement("li");
+
+
+    // ========================================================
+    // FOLDER
+    // ========================================================
+
+    if (item.type === "dir") {
+
+        li.className = "folder";
+
+        const row = document.createElement("div");
+
+        row.className = "item";
+
+        row.innerHTML = `
+            <span class="arrow">▶</span>
+            <span class="icon">📁</span>
+            <span class="folder-name">
+                ${escapeHtml(item.name)}
+            </span>
+        `;
+
+
+        const children = document.createElement("div");
+
+        children.className = "children";
+
+
+        row.addEventListener("click", async () => {
+
+            const isOpen = li.classList.contains("open");
+
+
+            // Nếu đang mở thì đóng
+            if (isOpen) {
+
+                li.classList.remove("open");
+
+                return;
+
+            }
+
+
+            // Nếu chưa tải nội dung
+            if (!children.dataset.loaded) {
+
+                children.innerHTML = `
+                    <div class="loading">
+                        ⏳ Đang tải...
+                    </div>
+                `;
+
+
+                li.classList.add("open");
+
+
+                try {
+
+                    const items =
+                        await getGitHubContents(item.path);
+
+                    children.innerHTML = "";
+
+                    const ul = document.createElement("ul");
+
+                    sortItems(items);
+
+                    for (const child of items) {
+
+                        ul.appendChild(
+                            createItem(child)
+                        );
+
+                    }
+
+                    children.appendChild(ul);
+
+                    children.dataset.loaded = "true";
+
+                } catch (error) {
+
+                    children.innerHTML = `
+                        <div class="error">
+                            ❌ ${escapeHtml(error.message)}
+                        </div>
+                    `;
+
+                }
+
+            } else {
+
+                li.classList.add("open");
+
+            }
+
+        });
+
+
+        li.appendChild(row);
+
+        li.appendChild(children);
+
+    }
+
+
+    // ========================================================
+    // FILE
+    // ========================================================
+
+    else {
+
+        li.className = "file";
+
+        const row = document.createElement("div");
+
+        row.className = "item";
+
+        row.innerHTML = `
+            <span class="arrow"></span>
+            <span class="icon">📄</span>
+            <span class="file-name">
+                ${escapeHtml(item.name)}
+            </span>
+        `;
+
+
+        row.addEventListener("click", () => {
+
+            showFileInfo(item);
+
+        });
+
+
+        li.appendChild(row);
+
+    }
+
+
+    return li;
+
+}
+
+
+// ============================================================
+// SHOW FILE INFO
+// ============================================================
+
+function showFileInfo(item) {
+
+    const info = document.getElementById("fileInfo");
+
+    const size = formatBytes(item.size);
+
+
+    info.style.display = "block";
+
+
+    info.innerHTML = `
+
+        <h3>📄 ${escapeHtml(item.name)}</h3>
+
+        <p>
+            <strong>Path:</strong>
+            ${escapeHtml(item.path)}
+        </p>
+
+        <p class="size">
+            Kích thước: ${size}
+        </p>
+
+        <p>
+            <a
+                href="${item.html_url}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Mở trên GitHub ↗
+            </a>
+        </p>
+
+        <p>
+            <a
+                href="${item.download_url}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Download file ↙
+            </a>
+        </p>
+
+    `;
+
+}
+
+
+// ============================================================
+// SORT
+// Folder trước, file sau
+// ============================================================
+
+function sortItems(items) {
+
+    items.sort((a, b) => {
+
+        // Folder trước
+        if (a.type === "dir" && b.type !== "dir") {
+            return -1;
+        }
+
+        if (a.type !== "dir" && b.type === "dir") {
+            return 1;
+        }
+
+        // Alphabet
+        return a.name.localeCompare(
+            b.name,
+            undefined,
+            {
+                numeric: true,
+                sensitivity: "base"
+            }
+        );
+
+    });
+
+}
+
+
+// ============================================================
+// FORMAT FILE SIZE
+// ============================================================
+
+function formatBytes(bytes) {
+
+    if (!bytes) {
+        return "0 Bytes";
+    }
+
+    const units = [
+        "Bytes",
+        "KB",
+        "MB",
+        "GB"
+    ];
+
+    const index =
+        Math.floor(
+            Math.log(bytes) /
+            Math.log(1024)
+        );
+
+    return (
+        parseFloat(
+            (bytes / Math.pow(1024, index))
+                .toFixed(2)
+        )
+        + " "
+        + units[index]
+    );
+
+}
+
+
+// ============================================================
+// ESCAPE HTML
+// ============================================================
+
+function escapeHtml(text) {
+
+    return String(text)
+
+        .replaceAll("&", "&amp;")
+
+        .replaceAll("<", "&lt;")
+
+        .replaceAll(">", "&gt;")
+
+        .replaceAll('"', "&quot;")
+
+        .replaceAll("'", "&#039;");
+
+}
+
+
+// ============================================================
+// START
+// ============================================================
+
+loadRoot();
+
+</script>
+
+</body>
+</html>
