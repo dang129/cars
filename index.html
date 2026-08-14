@@ -669,13 +669,49 @@
       border-radius: var(--radius-sm);
       background-color: var(--bg-page);
       width: 100%;
-      max-width: 480px;
+      max-width: 540px;
       transition: border-color 0.2s, background-color 0.2s;
     }
 
     .local-file-card-box.drag-over {
       border-color: var(--primary-color);
       background-color: var(--bg-surface);
+    }
+
+    .local-file-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+    }
+
+    .url-input-bar {
+      padding: 0.5rem 0.6rem;
+      background-color: var(--bg-page);
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .url-input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: 100%;
+    }
+
+    .url-icon {
+      display: inline-flex;
+      align-items: center;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .url-field {
+      flex: 1;
+      min-width: 0;
+      padding: 0.35rem 0.5rem;
+      font-size: 1.1rem;
     }
 
     .local-file-note {
@@ -833,6 +869,13 @@
             </svg>
             <span>Mở Tập Tin Trên Máy</span>
           </button>
+          <button type="button" id="btn-open-url" class="btn-action btn-compact" title="Mở tập tin từ đường link URL bất kỳ">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span>Mở Từ Link URL</span>
+          </button>
           <button type="button" id="btn-copy-download-url" class="btn-action btn-compact display-none" title="Sao chép liên kết tải về">Sao chép link</button>
           <button type="button" id="btn-direct-download" class="btn-action btn-primary btn-compact display-none" title="Tải tập tin về máy">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -842,6 +885,21 @@
             </svg>
             <span>Tải xuống</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Khung nhập liên kết URL tập tin -->
+      <div id="url-input-bar" class="url-input-bar display-none">
+        <div id="url-input-group" class="url-input-group">
+          <span id="url-icon" class="url-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+          </span>
+          <input type="url" id="input-direct-url" class="form-input url-field" placeholder="Dán hoặc gõ đường link URL tập tin (ví dụ: https://.../tailieu.pdf)" aria-label="Đường link tập tin trực tuyến">
+          <button type="button" id="btn-submit-direct-url" class="btn-action btn-primary btn-compact" title="Mở tập tin từ đường dẫn">Mở Link</button>
+          <button type="button" id="btn-close-url-bar" class="btn-action btn-compact" title="Đóng thanh nhập link">&#x2715;</button>
         </div>
       </div>
 
@@ -855,18 +913,27 @@
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
           <p><strong>Chưa chọn tập tin nào</strong></p>
-          <p>Hãy bấm vào một tập tin bất kỳ trong cây thư mục phía trên hoặc mở tập tin trực tiếp từ máy tính của bạn.</p>
+          <p>Hãy bấm vào một tập tin bất kỳ trong cây thư mục phía trên, mở từ máy tính, hoặc dán đường link URL trực tuyến.</p>
           
           <div id="local-file-card-box" class="local-file-card-box">
-            <button type="button" id="btn-open-local-file-main" class="btn-action btn-primary" title="Mở tập tin từ máy tính">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
-                <line x1="12" y1="10" x2="12" y2="16"></line>
-                <line x1="9" y1="13" x2="15" y2="13"></line>
-              </svg>
-              <span>Mở Tập Tin Trên Máy</span>
-            </button>
-            <p id="local-file-instruction-note" class="local-file-note">Có thể dán, Ctrl-V, kéo thả tập tin.</p>
+            <div id="local-file-actions-row" class="local-file-actions-row">
+              <button type="button" id="btn-open-local-file-main" class="btn-action btn-primary" title="Mở tập tin từ máy tính">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                  <line x1="12" y1="10" x2="12" y2="16"></line>
+                  <line x1="9" y1="13" x2="15" y2="13"></line>
+                </svg>
+                <span>Mở Tập Tin Trên Máy</span>
+              </button>
+              <button type="button" id="btn-open-url-main" class="btn-action" title="Mở tập tin từ đường link URL">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                <span>Mở Từ Link URL</span>
+              </button>
+            </div>
+            <p id="local-file-instruction-note" class="local-file-note">Có thể dán link URL, dán tập tin, Ctrl-V hoặc kéo thả trực tiếp.</p>
           </div>
         </div>
 
@@ -1101,6 +1168,12 @@
       const localFileCardBox = document.getElementById('local-file-card-box');
       const btnOpenLocalFile = document.getElementById('btn-open-local-file');
       const btnOpenLocalFileMain = document.getElementById('btn-open-local-file-main');
+      const btnOpenUrl = document.getElementById('btn-open-url');
+      const btnOpenUrlMain = document.getElementById('btn-open-url-main');
+      const urlInputBar = document.getElementById('url-input-bar');
+      const inputDirectUrl = document.getElementById('input-direct-url');
+      const btnSubmitDirectUrl = document.getElementById('btn-submit-direct-url');
+      const btnCloseUrlBar = document.getElementById('btn-close-url-bar');
       const inputLocalFilePicker = document.getElementById('input-local-file-picker');
       const activeFileContentArea = document.getElementById('active-file-content-area');
       const metaFileName = document.getElementById('meta-file-name');
@@ -1217,6 +1290,32 @@
           return { owner, repo, path: decodeURIComponent(path) };
         }
         return null;
+      }
+
+      // Kiểm tra chuỗi có phải là đường dẫn URL hợp lệ hay không
+      function isWebUrl(str) {
+        if (!str || typeof str !== 'string') return false;
+        const trimmed = str.trim();
+        return /^(?:https?:\/\/|ftp:\/\/)[^\s]+$/i.test(trimmed);
+      }
+
+      // Trích xuất tên tập tin từ đường link URL
+      function getFileNameFromUrl(urlStr) {
+        if (!urlStr) return 'tap-tin-truc-tuyen';
+        try {
+          const parsed = new URL(urlStr.trim());
+          const segments = parsed.pathname.split('/').filter(Boolean);
+          if (segments.length > 0) {
+            const rawLast = segments[segments.length - 1];
+            const decoded = decodeURIComponent(rawLast);
+            if (decoded) return decoded;
+          }
+          return parsed.hostname || 'tap-tin-truc-tuyen';
+        } catch (e) {
+          const clean = urlStr.split('?')[0].split('#')[0];
+          const parts = clean.split('/').filter(Boolean);
+          return parts.length > 0 ? decodeURIComponent(parts[parts.length - 1]) : 'tap-tin-truc-tuyen';
+        }
       }
 
       // Kiểm tra và tự động điền nếu người dùng dán link GitHub vào ô nhập
@@ -1642,18 +1741,24 @@
         try {
           const pdfjs = await ensurePdfJsLoaded();
 
-          let arrayBuffer;
+          let loadingTask;
           if (source instanceof ArrayBuffer) {
-            arrayBuffer = source;
+            loadingTask = pdfjs.getDocument({ data: source });
           } else {
-            const response = await fetch(source);
-            if (!response.ok) {
-              throw new Error(`Không thể nạp dữ liệu PDF từ máy chủ (Mã HTTP ${response.status})`);
+            try {
+              const response = await fetch(source);
+              if (response.ok) {
+                const arrayBuffer = await response.arrayBuffer();
+                loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+              } else {
+                throw new Error(`HTTP ${response.status}`);
+              }
+            } catch (fetchErr) {
+              // Dự phòng nạp trực tiếp qua đường dẫn URL trong PDF.js
+              loadingTask = pdfjs.getDocument({ url: source, withCredentials: false });
             }
-            arrayBuffer = await response.arrayBuffer();
           }
 
-          const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
           currentPdfDoc = await loadingTask.promise;
           currentPdfPageNum = 1;
           isPdfFitPageMode = true;
@@ -1664,9 +1769,9 @@
           pdfLoadingIndicator.classList.add('display-none');
           pdfErrorContainer.classList.remove('display-none');
           pdfErrorContainer.innerHTML = `
-            <p><strong>Không thể hiển thị xem trước PDF</strong></p>
-            <p>${escapeHtml(pdfErr.message)}</p>
-            <p>Bạn có thể bấm nút <strong>Tải xuống</strong> ở góc trên để mở và xem tài liệu trên thiết bị.</p>
+            <p><strong>Không thể hiển thị xem trước PDF từ liên kết này</strong></p>
+            <p>${escapeHtml(pdfErr.message || 'Lỗi không xác định')}</p>
+            <p>Nếu máy chủ chứa tập tin chặn truy cập trực tiếp (CORS), bạn có thể bấm nút <strong>Tải xuống</strong> hoặc <strong>Mở liên kết gốc</strong> ở góc trên.</p>
           `;
         }
       }
@@ -1975,6 +2080,100 @@
         showToast(`Đã mở tập tin: ${file.name}`);
       }
 
+      // Xử lý nạp và hiển thị xem trước tập tin từ đường link URL trực tiếp
+      async function loadDirectUrlFile(urlStr, customName) {
+        if (!urlStr) return;
+        const cleanUrl = urlStr.trim();
+        if (!cleanUrl) return;
+
+        // Dọn dẹp tài liệu PDF cũ nếu có
+        if (currentPdfDoc) {
+          try {
+            currentPdfDoc.destroy();
+          } catch (destrErr) {}
+          currentPdfDoc = null;
+        }
+
+        const fileName = customName || getFileNameFromUrl(cleanUrl);
+        const fileTypeInfo = getFileTypeInfo(fileName);
+
+        emptySelectionPlaceholder.classList.add('display-none');
+        activeFileContentArea.classList.remove('display-none');
+
+        previewBoxTitle.textContent = fileName;
+        previewBoxTitle.title = fileName;
+
+        metaFileName.textContent = fileName;
+        metaFileSize.textContent = '(Từ đường link trực tuyến)';
+        metaFilePath.textContent = cleanUrl;
+
+        metaFileType.textContent = `${fileTypeInfo.label} (Trực tuyến)`;
+        previewBoxTypeBadge.textContent = fileTypeInfo.label;
+
+        // Nút mở liên kết gốc
+        linkGithubRepo.href = cleanUrl;
+        linkGithubRepo.textContent = 'Mở liên kết gốc';
+        linkGithubRepo.classList.remove('display-none');
+
+        btnCopyDownloadUrl.classList.remove('display-none');
+        btnDirectDownload.classList.remove('display-none');
+
+        btnDirectDownload.onclick = () => {
+          const link = document.createElement('a');
+          link.href = cleanUrl;
+          link.download = fileName;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast('Đang bắt đầu tải tập tin xuống...');
+        };
+
+        btnCopyDownloadUrl.onclick = () => {
+          navigator.clipboard.writeText(cleanUrl).then(() => {
+            showToast('Đã sao chép đường link URL vào bộ nhớ đệm!');
+          }).catch(() => {
+            showToast('Không thể sao chép liên kết.');
+          });
+        };
+
+        // Đặt lại các khung hiển thị xem trước
+        previewCodeText.classList.add('display-none');
+        previewImageWrapper.classList.add('display-none');
+        previewPdfWrapper.classList.add('display-none');
+        btnCopyContent.classList.add('display-none');
+        currentLoadedFileRawText = '';
+
+        if (fileTypeInfo.category === 'pdf') {
+          previewPdfWrapper.classList.remove('display-none');
+          await loadPdfDocument(cleanUrl, fileName);
+        } else if (fileTypeInfo.category === 'image') {
+          previewImageWrapper.classList.remove('display-none');
+          previewImgElement.src = cleanUrl;
+          previewImgElement.onerror = () => {
+            showToast('Không thể tải hình ảnh từ liên kết.');
+          };
+        } else if (fileTypeInfo.category === 'code') {
+          previewCodeText.classList.remove('display-none');
+          btnCopyContent.classList.remove('display-none');
+          previewCodeText.textContent = `Đang tải nội dung văn bản từ ${cleanUrl}...`;
+
+          try {
+            const res = await fetch(cleanUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const textContent = await res.text();
+            currentLoadedFileRawText = textContent;
+            previewCodeText.textContent = textContent;
+          } catch (textErr) {
+            previewCodeText.textContent = `Không thể nạp trực tiếp nội dung văn bản từ URL này (${textErr.message}).\n\nCó thể máy chủ nguồn chặn truy cập chéo tên miền (CORS). Bạn có thể bấm nút "Tải xuống" hoặc "Mở liên kết gốc" ở góc trên.`;
+          }
+        } else {
+          previewCodeText.classList.remove('display-none');
+          previewCodeText.textContent = `Tập tin trực tuyến: "${fileName}" (${fileTypeInfo.label}).\n\nBạn có thể bấm nút "Tải xuống" hoặc "Mở liên kết gốc" ở góc trên để mở tập tin.`;
+        }
+      }
+
       // Khởi tạo và gắn kết các sự kiện tương tác
       function initializeEvents() {
         // Nút Duyệt kho (làm mới dữ liệu từ GitHub)
@@ -2072,7 +2271,85 @@
           });
         }
 
-        // Kéo và thả tập tin (Drag and Drop)
+        // Xử lý đóng mở thanh nhập đường link URL trực tiếp
+        function toggleUrlInputBar(forceShow) {
+          if (!urlInputBar) return;
+          if (forceShow === true) {
+            urlInputBar.classList.remove('display-none');
+          } else if (forceShow === false) {
+            urlInputBar.classList.add('display-none');
+          } else {
+            urlInputBar.classList.toggle('display-none');
+          }
+
+          if (!urlInputBar.classList.contains('display-none') && inputDirectUrl) {
+            inputDirectUrl.focus();
+            inputDirectUrl.select();
+          }
+        }
+
+        if (btnOpenUrl) {
+          btnOpenUrl.addEventListener('click', () => {
+            toggleUrlInputBar();
+          });
+        }
+
+        if (btnOpenUrlMain) {
+          btnOpenUrlMain.addEventListener('click', () => {
+            toggleUrlInputBar(true);
+          });
+        }
+
+        if (btnCloseUrlBar) {
+          btnCloseUrlBar.addEventListener('click', () => {
+            toggleUrlInputBar(false);
+          });
+        }
+
+        function handleDirectUrlSubmit() {
+          if (!inputDirectUrl) return;
+          const urlText = inputDirectUrl.value.trim();
+          if (!urlText) {
+            showToast('Vui lòng nhập hoặc dán đường link URL tập tin');
+            return;
+          }
+
+          const parsedGit = parseGitHubUrl(urlText);
+          if (parsedGit) {
+            inputOwner.value = parsedGit.owner;
+            inputRepo.value = parsedGit.repo;
+            inputPath.value = parsedGit.path;
+            loadRepositoryRoot();
+            toggleUrlInputBar(false);
+            showToast(`Đã nhận diện kho GitHub: ${parsedGit.owner}/${parsedGit.repo}`);
+            return;
+          }
+
+          if (isWebUrl(urlText)) {
+            loadDirectUrlFile(urlText);
+            toggleUrlInputBar(false);
+            showToast(`Đã mở link: ${getFileNameFromUrl(urlText)}`);
+          } else {
+            showToast('Đường link URL không hợp lệ (cần bắt đầu bằng http:// hoặc https://)');
+          }
+        }
+
+        if (btnSubmitDirectUrl) {
+          btnSubmitDirectUrl.addEventListener('click', handleDirectUrlSubmit);
+        }
+
+        if (inputDirectUrl) {
+          inputDirectUrl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleDirectUrlSubmit();
+            } else if (e.key === 'Escape') {
+              toggleUrlInputBar(false);
+            }
+          });
+        }
+
+        // Kéo và thả tập tin hoặc liên kết URL (Drag and Drop)
         if (localFileCardBox) {
           localFileCardBox.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -2084,8 +2361,25 @@
           localFileCardBox.addEventListener('drop', (e) => {
             e.preventDefault();
             localFileCardBox.classList.remove('drag-over');
-            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-              handleLocalFilePreview(e.dataTransfer.files[0]);
+            if (e.dataTransfer) {
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleLocalFilePreview(e.dataTransfer.files[0]);
+                return;
+              }
+              const uriText = (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '').trim();
+              if (uriText) {
+                const parsedGit = parseGitHubUrl(uriText);
+                if (parsedGit) {
+                  inputOwner.value = parsedGit.owner;
+                  inputRepo.value = parsedGit.repo;
+                  inputPath.value = parsedGit.path;
+                  loadRepositoryRoot();
+                  showToast(`Đã nhận diện kho GitHub: ${parsedGit.owner}/${parsedGit.repo}`);
+                } else if (isWebUrl(uriText)) {
+                  loadDirectUrlFile(uriText);
+                  showToast(`Đã nhận diện link: ${getFileNameFromUrl(uriText)}`);
+                }
+              }
             }
           });
         }
@@ -2096,14 +2390,31 @@
 
         window.addEventListener('drop', (e) => {
           e.preventDefault();
-          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleLocalFilePreview(e.dataTransfer.files[0]);
+          if (e.dataTransfer) {
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              handleLocalFilePreview(e.dataTransfer.files[0]);
+              return;
+            }
+            const uriText = (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '').trim();
+            if (uriText) {
+              const parsedGit = parseGitHubUrl(uriText);
+              if (parsedGit) {
+                inputOwner.value = parsedGit.owner;
+                inputRepo.value = parsedGit.repo;
+                inputPath.value = parsedGit.path;
+                loadRepositoryRoot();
+                showToast(`Đã nhận diện kho GitHub: ${parsedGit.owner}/${parsedGit.repo}`);
+              } else if (isWebUrl(uriText)) {
+                loadDirectUrlFile(uriText);
+                showToast(`Đã nhận diện link: ${getFileNameFromUrl(uriText)}`);
+              }
+            }
           }
         });
 
-        // Dán tập tin từ clipboard (Paste)
+        // Dán tập tin hoặc liên kết URL từ clipboard (Ctrl + V / Paste)
         window.addEventListener('paste', (e) => {
-          // Nếu đang focus vào ô input thì không chặn
+          // Nếu đang focus vào ô input thì không chặn trừ khi ở ô ngoài
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
             return;
           }
@@ -2112,14 +2423,24 @@
               e.preventDefault();
               handleLocalFilePreview(e.clipboardData.files[0]);
             } else {
-              const text = e.clipboardData.getData('text');
+              const text = (e.clipboardData.getData('text') || '').trim();
+              if (!text) return;
+
               const parsed = parseGitHubUrl(text);
               if (parsed) {
+                e.preventDefault();
                 inputOwner.value = parsed.owner;
                 inputRepo.value = parsed.repo;
                 inputPath.value = parsed.path;
                 loadRepositoryRoot();
-                showToast(`Đã dán và duyệt link GitHub: ${parsed.owner}/${parsed.repo}`);
+                showToast(`Đã nhận diện và duyệt link GitHub: ${parsed.owner}/${parsed.repo}`);
+                return;
+              }
+
+              if (isWebUrl(text)) {
+                e.preventDefault();
+                loadDirectUrlFile(text);
+                showToast(`Đã tự động nhận diện và mở link: ${getFileNameFromUrl(text)}`);
               }
             }
           }
