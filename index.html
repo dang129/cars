@@ -744,9 +744,8 @@
       <div id="tree-header-bar" class="panel-header">
         <h2 id="tree-heading">Cây Thư Mục &amp; Tập Tin</h2>
         <div id="tree-actions-toolbar" class="panel-actions">
-          <button type="button" id="btn-expand-all" class="btn-action btn-compact" title="Mở rộng các thư mục đã nạp">Mở tất cả</button>
+          <button type="button" id="btn-expand-all" class="btn-action btn-compact" title="Mở rộng các thư mục">Mở tất cả</button>
           <button type="button" id="btn-collapse-all" class="btn-action btn-compact" title="Thu gọn các thư mục">Thu gọn</button>
-          <button type="button" id="btn-refresh-tree" class="btn-action btn-compact" title="Làm mới dữ liệu">Làm mới</button>
         </div>
       </div>
 
@@ -1015,14 +1014,13 @@
       const btnFetchRepo = document.getElementById('btn-fetch-repo');
       const inputSearchFilter = document.getElementById('input-search-filter');
       const btnClearSearch = document.getElementById('btn-clear-search');
-      const breadcrumbRoot = document.getElementById('breadcrumb-root');
-      const breadcrumbCurrentText = document.getElementById('breadcrumb-current-text');
+      const breadcrumbNavigation = document.getElementById('breadcrumb-navigation');
       const rootTreeList = document.getElementById('root-tree-list');
       const treeStatusMessage = document.getElementById('tree-status-message');
       const statusItemCount = document.getElementById('status-item-count');
+      const statusApiInfo = document.getElementById('status-api-info');
       const btnExpandAll = document.getElementById('btn-expand-all');
       const btnCollapseAll = document.getElementById('btn-collapse-all');
-      const btnRefreshTree = document.getElementById('btn-refresh-tree');
 
       const emptySelectionPlaceholder = document.getElementById('empty-selection-placeholder');
       const activeFileContentArea = document.getElementById('active-file-content-area');
@@ -1059,7 +1057,8 @@
       let currentActiveRow = null;
       let currentLoadedFileRawText = '';
       let currentLoadedFileItem = null;
-      let totalLoadedItems = 0;
+      let totalLoadedFolders = 0;
+      let totalLoadedFiles = 0;
 
       // Trạng thái trình đọc PDF
       let currentPdfDoc = null;
@@ -1122,20 +1121,56 @@
         }, 3000);
       }
 
-      // Gọi GitHub REST API v3
-      async function fetchGitHubContents(owner, repo, path) {
-        const cleanPath = (path || '').trim().replace(/^\/+|\/+$/g, '');
-        const encodedPath = cleanPath.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-        const url = encodedPath
-          ? `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodedPath}`
-          : `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents`;
+      // Tự động phân tích URL GitHub nếu người dùng dán cả đường dẫn
+      function parseGitHubUrl(inputStr) {
+        if (!inputStr) return null;
+        const str = inputStr.trim();
+        const githubRegex = /^(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/]+)\/([^\/]+)(?:\/(?:tree|blob)\/[^\/]+(?:\/(.*))?|\/(.*))?$/i;
+        const match = str.match(githubRegex);
+        if (match) {
+          const owner = match[1];
+          let repo = match[2];
+          if (repo.endsWith('.git')) repo = repo.slice(0, -4);
+          const path = match[3] || match[4] || '';
+          return { owner, repo, path: decodeURIComponent(path) };
+        }
+        return null;
+      }
 
+      // Kiểm tra và tự động điền nếu người dùng dán link GitHub vào ô nhập
+      function handlePotentialUrlPaste(inputElem) {
+        const parsed = parseGitHubUrl(inputElem.value);
+        if (parsed) {
+          inputOwner.value = parsed.owner;
+          inputRepo.value = parsed.repo;
+          inputPath.value = parsed.path;
+          showToast(`Đã tự động nhận diện kho: ${parsed.owner}/${parsed.repo}`);
+          return true;
+        }
+        return false;
+      }
+
+      // Loại bỏ dấu tiếng Việt để tìm kiếm không dấu
+      function removeVietnameseTones(str) {
+        if (!str) return '';
+        return str
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/đ/g, 'd')
+          .replace(/Đ/g, 'D');
+      }
+
+      // Nạp toàn bộ cây thư mục từ GitHub qua Git Trees API (chỉ tốn đúng 1 lượt gọi)
+      async function fetchGitHubTree(owner, repo) {
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/HEAD?recursive=1`;
         const response = await fetch(url);
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error(`Không tìm thấy kho lưu trữ hoặc đường dẫn "${cleanPath || 'gốc'}" (Mã lỗi 404).`);
+            throw new Error(`Không tìm thấy kho lưu trữ "${owner}/${repo}" hoặc nhánh mặc định (Mã lỗi 404).`);
           } else if (response.status === 403) {
             throw new Error(`Đã vượt quá giới hạn truy cập tạm thời của GitHub API (Mã lỗi 403). Vui lòng thử lại sau.`);
+          } else if (response.status === 409) {
+            throw new Error(`Kho lưu trữ "${owner}/${repo}" đang trống hoặc chưa có commit nào (Mã lỗi 409).`);
           } else {
             throw new Error(`GitHub API phản hồi mã lỗi HTTP ${response.status}: ${response.statusText}`);
           }
@@ -1143,119 +1178,255 @@
         return await response.json();
       }
 
-      // Sắp xếp thư mục trước, tập tin sau và theo bảng chữ cái
-      function sortTreeItems(items) {
-        if (!Array.isArray(items)) return [];
-        return items.sort((a, b) => {
+      // Xây dựng cấu trúc cây phân cấp từ danh sách Git Trees
+      function buildFullTreeHierarchy(treeItems, filterPath, owner, repo) {
+        const cleanPrefix = (filterPath || '').trim().replace(/^\/+|\/+$/g, '');
+        const prefixWithSlash = cleanPrefix ? cleanPrefix + '/' : '';
+
+        const rootNode = {
+          name: '',
+          path: cleanPrefix,
+          type: 'dir',
+          children: []
+        };
+
+        const dirMap = { '': rootNode };
+
+        (treeItems || []).forEach((item) => {
+          const fullPath = item.path || '';
+
+          // Nếu có lọc theo đường dẫn, chỉ lấy các mục bên trong đường dẫn đó hoặc đúng mục đó
+          if (cleanPrefix) {
+            if (fullPath !== cleanPrefix && !fullPath.startsWith(prefixWithSlash)) {
+              return;
+            }
+          }
+
+          // Tính đường dẫn tương đối hiển thị từ gốc thư mục đang xem
+          let relativePath = '';
+          if (cleanPrefix && fullPath.startsWith(prefixWithSlash)) {
+            relativePath = fullPath.substring(prefixWithSlash.length);
+          } else if (cleanPrefix && fullPath === cleanPrefix) {
+            // Xử lý chính xác khi người dùng nhập đường dẫn của 1 tập tin hoặc 1 thư mục lá
+            relativePath = cleanPrefix.split('/').pop() || fullPath;
+          } else {
+            relativePath = fullPath;
+          }
+
+          if (!relativePath) return;
+
+          const isDir = item.type === 'tree';
+          const parts = relativePath.split('/');
+          const leafName = parts[parts.length - 1];
+
+          // Đảm bảo tất cả thư mục cha trung gian đều được tạo
+          let currentRelativePath = '';
+          let parentNode = rootNode;
+
+          for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            const nextRelativePath = currentRelativePath ? `${currentRelativePath}/${part}` : part;
+            const fullParentPath = cleanPrefix ? `${cleanPrefix}/${nextRelativePath}` : nextRelativePath;
+
+            if (!dirMap[nextRelativePath]) {
+              const newDir = {
+                name: part,
+                path: fullParentPath,
+                type: 'dir',
+                children: []
+              };
+              dirMap[nextRelativePath] = newDir;
+              parentNode.children.push(newDir);
+            }
+            parentNode = dirMap[nextRelativePath];
+            currentRelativePath = nextRelativePath;
+          }
+
+          if (isDir) {
+            if (!dirMap[relativePath]) {
+              const newDir = {
+                name: leafName,
+                path: fullPath,
+                type: 'dir',
+                children: []
+              };
+              dirMap[relativePath] = newDir;
+              parentNode.children.push(newDir);
+            }
+          } else {
+            // Tập tin
+            const encodedPath = fullPath.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+            const downloadUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/HEAD/${encodedPath}`;
+            const htmlUrl = `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/blob/HEAD/${encodedPath}`;
+
+            const fileNode = {
+              name: leafName,
+              path: fullPath,
+              type: 'file',
+              size: item.size || 0,
+              sha: item.sha || '',
+              download_url: downloadUrl,
+              html_url: htmlUrl
+            };
+            parentNode.children.push(fileNode);
+          }
+        });
+
+        return rootNode;
+      }
+
+      // Đệ quy hiển thị cây thư mục lên giao diện
+      function renderTreeHierarchy(node, container, autoOpen) {
+        if (!node || !Array.isArray(node.children) || node.children.length === 0) {
+          return;
+        }
+
+        // Sắp xếp: Thư mục lên đầu, tập tin theo sau, theo bảng chữ cái tiếng Việt
+        node.children.sort((a, b) => {
           if (a.type === 'dir' && b.type !== 'dir') return -1;
           if (a.type !== 'dir' && b.type === 'dir') return 1;
           return (a.name || '').localeCompare(b.name || '', 'vi', { numeric: true, sensitivity: 'base' });
         });
+
+        node.children.forEach((item) => {
+          const li = document.createElement('li');
+          li.className = 'tree-node ' + (item.type === 'dir' ? 'folder-node' : 'file-node');
+          li.setAttribute('data-name', (item.name || '').toLowerCase());
+          li.setAttribute('data-path', item.path || '');
+
+          const row = document.createElement('div');
+          row.className = 'tree-row';
+          row.tabIndex = 0;
+
+          if (item.type === 'dir') {
+            totalLoadedFolders++;
+            row.innerHTML = `
+              <span class="arrow-icon">&#9654;</span>
+              <span class="type-icon">${getFileSvgIcon('dir', item.name)}</span>
+              <span class="folder-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+            `;
+
+            const subUl = document.createElement('ul');
+            subUl.className = 'tree-sub-list';
+
+            if (autoOpen) {
+              li.classList.add('open');
+            }
+
+            // Đóng / mở nhánh thư mục tức thì (0ms, dữ liệu đã nạp sẵn)
+            row.addEventListener('click', () => {
+              li.classList.toggle('open');
+            });
+
+            row.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                row.click();
+              }
+            });
+
+            li.appendChild(row);
+            li.appendChild(subUl);
+            container.appendChild(li);
+
+            // Đệ quy dựng các cấp con bên trong
+            renderTreeHierarchy(item, subUl, false);
+          } else {
+            // Tập tin
+            totalLoadedFiles++;
+            const formattedSize = formatBytes(item.size);
+            row.innerHTML = `
+              <span class="arrow-icon bullet-placeholder">&bull;</span>
+              <span class="type-icon">${getFileSvgIcon('file', item.name)}</span>
+              <span class="file-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+              <span class="file-size-tag">${formattedSize}</span>
+            `;
+
+            row.addEventListener('click', () => {
+              if (currentActiveRow) {
+                currentActiveRow.classList.remove('active');
+              }
+              row.classList.add('active');
+              currentActiveRow = row;
+              loadFileDetails(item);
+            });
+
+            row.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                row.click();
+              }
+            });
+
+            li.appendChild(row);
+            container.appendChild(li);
+          }
+        });
       }
 
-      // Cập nhật Breadcrumb
+      // Cập nhật Breadcrumb đa cấp tương tác
       function updateBreadcrumb(path) {
         const clean = (path || '').trim().replace(/^\/+|\/+$/g, '');
-        if (breadcrumbCurrentText) {
-          breadcrumbCurrentText.textContent = clean ? clean : '(Thư mục gốc)';
-        }
-      }
+        if (!breadcrumbNavigation) return;
+        breadcrumbNavigation.innerHTML = '';
 
-      // Tạo một phần tử Node trong cây thư mục (Hỗ trợ hiển thị trên thiết bị nhỏ)
-      function createTreeNodeElement(item) {
-        const li = document.createElement('li');
-        li.className = 'tree-node ' + (item.type === 'dir' ? 'folder-node' : 'file-node');
-        li.setAttribute('data-name', (item.name || '').toLowerCase());
-        li.setAttribute('data-path', item.path || '');
+        // Nút Gốc
+        const rootSpan = document.createElement('span');
+        rootSpan.id = 'breadcrumb-root';
+        rootSpan.className = 'breadcrumb-item';
+        rootSpan.title = 'Về thư mục gốc';
+        rootSpan.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          </svg>
+          <span>Gốc</span>
+        `;
+        rootSpan.addEventListener('click', () => {
+          inputPath.value = '';
+          loadRepositoryRoot();
+        });
+        breadcrumbNavigation.appendChild(rootSpan);
 
-        const row = document.createElement('div');
-        row.className = 'tree-row';
-        row.tabIndex = 0;
-
-        if (item.type === 'dir') {
-          row.innerHTML = `
-            <span class="arrow-icon">&#9654;</span>
-            <span class="type-icon">${getFileSvgIcon('dir', item.name)}</span>
-            <span class="folder-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
-          `;
-
-          const subUl = document.createElement('ul');
-          subUl.className = 'tree-sub-list';
-
-          // Sự kiện mở / đóng thư mục
-          row.addEventListener('click', async () => {
-            const isOpen = li.classList.contains('open');
-            if (isOpen) {
-              li.classList.remove('open');
-              return;
-            }
-
-            if (!subUl.dataset.loaded) {
-              subUl.innerHTML = '<li class="badge-status">Đang nạp...</li>';
-              li.classList.add('open');
-
-              try {
-                const subItems = await fetchGitHubContents(inputOwner.value.trim(), inputRepo.value.trim(), item.path);
-                subUl.innerHTML = '';
-                if (Array.isArray(subItems) && subItems.length > 0) {
-                  sortTreeItems(subItems);
-                  subItems.forEach((subItem) => {
-                    subUl.appendChild(createTreeNodeElement(subItem));
-                    totalLoadedItems++;
-                  });
-                } else {
-                  subUl.innerHTML = '<li class="file-size-tag"><em>(Thư mục trống)</em></li>';
-                }
-                subUl.dataset.loaded = 'true';
-                updateItemCount();
-              } catch (subError) {
-                subUl.innerHTML = `<li class="state-error">Lỗi: ${escapeHtml(subError.message)}</li>`;
-              }
-            } else {
-              li.classList.add('open');
-            }
-          });
-
-          // Hỗ trợ bàn phím Enter / Space
-          row.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              row.click();
-            }
-          });
-
-          li.appendChild(row);
-          li.appendChild(subUl);
-        } else {
-          // Tập tin
-          const formattedSize = formatBytes(item.size);
-          row.innerHTML = `
-            <span class="arrow-icon bullet-placeholder">&bull;</span>
-            <span class="type-icon">${getFileSvgIcon('file', item.name)}</span>
-            <span class="file-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
-            <span class="file-size-tag">${formattedSize}</span>
-          `;
-
-          row.addEventListener('click', () => {
-            if (currentActiveRow) {
-              currentActiveRow.classList.remove('active');
-            }
-            row.classList.add('active');
-            currentActiveRow = row;
-            loadFileDetails(item);
-          });
-
-          row.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              row.click();
-            }
-          });
-
-          li.appendChild(row);
+        if (!clean) {
+          const sep = document.createElement('span');
+          sep.className = 'breadcrumb-separator';
+          sep.textContent = '/';
+          const cur = document.createElement('span');
+          cur.className = 'breadcrumb-current-label';
+          cur.textContent = '(Toàn bộ kho)';
+          breadcrumbNavigation.appendChild(sep);
+          breadcrumbNavigation.appendChild(cur);
+          return;
         }
 
-        return li;
+        const parts = clean.split('/');
+        let accumulatedPath = '';
+        parts.forEach((part, index) => {
+          const sep = document.createElement('span');
+          sep.className = 'breadcrumb-separator';
+          sep.textContent = '/';
+          breadcrumbNavigation.appendChild(sep);
+
+          accumulatedPath = accumulatedPath ? `${accumulatedPath}/${part}` : part;
+          const thisPath = accumulatedPath;
+
+          if (index === parts.length - 1) {
+            const cur = document.createElement('span');
+            cur.className = 'breadcrumb-current-label';
+            cur.textContent = part;
+            breadcrumbNavigation.appendChild(cur);
+          } else {
+            const crumb = document.createElement('span');
+            crumb.className = 'breadcrumb-item';
+            crumb.textContent = part;
+            crumb.title = `Chuyển đến: ${thisPath}`;
+            crumb.addEventListener('click', () => {
+              inputPath.value = thisPath;
+              loadRepositoryRoot();
+            });
+            breadcrumbNavigation.appendChild(crumb);
+          }
+        });
       }
 
       // Hiển thị trang PDF lên thẻ Canvas
@@ -1346,8 +1517,8 @@
         await renderPdfPage(currentPdfPageNum);
       }
 
-      // Nạp dữ liệu tài liệu PDF từ đường dẫn URL GitHub
-      async function loadPdfDocument(downloadUrl, fileName) {
+      // Nạp dữ liệu tài liệu PDF từ đường dẫn URL hoặc ArrayBuffer
+      async function loadPdfDocument(source, fileName) {
         if (currentPdfDoc) {
           try {
             currentPdfDoc.destroy();
@@ -1367,12 +1538,16 @@
         try {
           const pdfjs = await ensurePdfJsLoaded();
 
-          // Nạp dữ liệu dưới dạng ArrayBuffer qua JavaScript
-          const response = await fetch(downloadUrl);
-          if (!response.ok) {
-            throw new Error(`Không thể nạp dữ liệu PDF từ máy chủ (Mã HTTP ${response.status})`);
+          let arrayBuffer;
+          if (source instanceof ArrayBuffer) {
+            arrayBuffer = source;
+          } else {
+            const response = await fetch(source);
+            if (!response.ok) {
+              throw new Error(`Không thể nạp dữ liệu PDF từ máy chủ (Mã HTTP ${response.status})`);
+            }
+            arrayBuffer = await response.arrayBuffer();
           }
-          const arrayBuffer = await response.arrayBuffer();
 
           const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
           currentPdfDoc = await loadingTask.promise;
@@ -1392,8 +1567,13 @@
         }
       }
 
-      // Nạp thư mục gốc
+      // Nạp toàn bộ cây thư mục (chỉ 1 lần gọi API duy nhất)
       async function loadRepositoryRoot() {
+        // Tự động xử lý nếu người dùng dán nguyên URL GitHub vào một trong các ô
+        if (handlePotentialUrlPaste(inputOwner) || handlePotentialUrlPaste(inputRepo)) {
+          // Đã parse tự động
+        }
+
         const owner = inputOwner.value.trim();
         const repo = inputRepo.value.trim();
         const path = inputPath.value.trim();
@@ -1411,30 +1591,28 @@
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          <p>Đang tải dữ liệu từ <strong>${escapeHtml(owner)}/${escapeHtml(repo)}</strong>...</p>
+          <p>Đang nạp toàn bộ dữ liệu từ <strong>${escapeHtml(owner)}/${escapeHtml(repo)}</strong>...</p>
         `;
         rootTreeList.classList.add('display-none');
         rootTreeList.innerHTML = '';
-        totalLoadedItems = 0;
+        totalLoadedFolders = 0;
+        totalLoadedFiles = 0;
         updateBreadcrumb(path);
 
         try {
-          const contents = await fetchGitHubContents(owner, repo, path);
+          const data = await fetchGitHubTree(owner, repo);
           treeStatusMessage.classList.add('display-none');
           rootTreeList.classList.remove('display-none');
 
-          if (Array.isArray(contents) && contents.length > 0) {
-            sortTreeItems(contents);
-            contents.forEach((item) => {
-              rootTreeList.appendChild(createTreeNodeElement(item));
-              totalLoadedItems++;
-            });
-          } else if (!Array.isArray(contents) && contents.type === 'file') {
-            rootTreeList.appendChild(createTreeNodeElement(contents));
-            totalLoadedItems = 1;
-            loadFileDetails(contents);
+          if (data && Array.isArray(data.tree) && data.tree.length > 0) {
+            const rootHierarchy = buildFullTreeHierarchy(data.tree, path, owner, repo);
+            renderTreeHierarchy(rootHierarchy, rootTreeList, true);
+
+            if (totalLoadedFolders === 0 && totalLoadedFiles === 0) {
+              rootTreeList.innerHTML = '<li class="file-size-tag"><em>(Không tìm thấy thư mục hoặc tập tin nào theo đường dẫn này)</em></li>';
+            }
           } else {
-            rootTreeList.innerHTML = '<li class="file-size-tag"><em>(Kho lưu trữ hoặc thư mục này đang trống)</em></li>';
+            rootTreeList.innerHTML = '<li class="file-size-tag"><em>(Kho lưu trữ này đang trống)</em></li>';
           }
           updateItemCount();
         } catch (error) {
@@ -1448,17 +1626,25 @@
         }
       }
 
-      // Cập nhật số lượng mục
+      // Cập nhật số lượng mục (thư mục và tập tin)
       function updateItemCount() {
         if (statusItemCount) {
-          const formattedCount = new Intl.NumberFormat('vi-VN').format(totalLoadedItems);
-          statusItemCount.textContent = `${formattedCount} mục đã nạp`;
+          const total = totalLoadedFolders + totalLoadedFiles;
+          const formattedTotal = new Intl.NumberFormat('vi-VN').format(total);
+          const formattedFolders = new Intl.NumberFormat('vi-VN').format(totalLoadedFolders);
+          const formattedFiles = new Intl.NumberFormat('vi-VN').format(totalLoadedFiles);
+          statusItemCount.textContent = `${formattedFolders} thư mục, ${formattedFiles} tập tin (Tổng ${formattedTotal} mục)`;
+        }
+        if (statusApiInfo) {
+          statusApiInfo.textContent = 'Git Trees API (1 lần nạp toàn bộ)';
         }
       }
 
-      // Lọc danh sách trong cây thư mục
+      // Lọc danh sách trong cây thư mục (Hỗ trợ chuẩn tiếng Việt NFC và tìm kiếm không dấu)
       function filterTreeNodes(keyword) {
-        const cleanKeyword = (keyword || '').trim().toLowerCase();
+        const rawKeyword = (keyword || '').trim();
+        const cleanKeyword = rawKeyword.toLowerCase().normalize('NFC');
+        const noToneKeyword = removeVietnameseTones(cleanKeyword);
         const allNodes = rootTreeList.querySelectorAll('.tree-node');
 
         if (!cleanKeyword) {
@@ -1469,8 +1655,12 @@
         }
 
         allNodes.forEach((node) => {
-          const name = node.getAttribute('data-name') || '';
-          if (name.includes(cleanKeyword)) {
+          const rawName = node.getAttribute('data-name') || '';
+          const cleanName = rawName.toLowerCase().normalize('NFC');
+          const noToneName = removeVietnameseTones(cleanName);
+
+          const isMatch = cleanName.includes(cleanKeyword) || (noToneKeyword.length >= 2 && noToneName.includes(noToneKeyword));
+          if (isMatch) {
             node.classList.remove('display-none');
             // Mở tất cả các thư mục cha để người dùng nhìn thấy kết quả
             let parentNode = node.parentElement ? node.parentElement.closest('.tree-node') : null;
@@ -1481,7 +1671,11 @@
             }
           } else {
             // Nếu là folder có chứa con khớp từ khoá thì vẫn hiển thị
-            const hasMatchingChild = node.querySelector(`[data-name*="${cleanKeyword}"]`);
+            const hasMatchingChild = Array.from(node.querySelectorAll('.tree-node')).some((child) => {
+              const childName = (child.getAttribute('data-name') || '').toLowerCase().normalize('NFC');
+              const childNoTone = removeVietnameseTones(childName);
+              return childName.includes(cleanKeyword) || (noToneKeyword.length >= 2 && childNoTone.includes(noToneKeyword));
+            });
             if (hasMatchingChild) {
               node.classList.remove('display-none');
               node.classList.add('open');
@@ -1494,11 +1688,19 @@
 
       // Tải và hiển thị chi tiết tập tin khi chọn từ cây thư mục
       async function loadFileDetails(item) {
+        // Dọn dẹp tài liệu PDF cũ nếu có
+        if (currentPdfDoc) {
+          try {
+            currentPdfDoc.destroy();
+          } catch (e) {}
+          currentPdfDoc = null;
+        }
+
         currentLoadedFileItem = item;
         emptySelectionPlaceholder.classList.add('display-none');
         activeFileContentArea.classList.remove('display-none');
 
-        // Bỏ tiền tố "Xem trước: " -> Chỉ để lại đúng tên file
+        // Tiêu đề chỉ hiển thị tên file
         previewBoxTitle.textContent = item.name || '-';
         previewBoxTitle.title = item.name || '';
 
@@ -1599,6 +1801,59 @@
         }
       }
 
+      // Xử lý nạp và hiển thị tập tin cục bộ (Kéo thả hoặc Dán)
+      async function handleLocalFilePreview(file) {
+        if (!file) return;
+
+        emptySelectionPlaceholder.classList.add('display-none');
+        activeFileContentArea.classList.remove('display-none');
+
+        previewBoxTitle.textContent = file.name;
+        previewBoxTitle.title = file.name;
+
+        metaFileName.textContent = file.name;
+        metaFileSize.textContent = formatBytes(file.size);
+        metaFilePath.textContent = `(Tập tin cục bộ từ máy)`;
+
+        const fileTypeInfo = getFileTypeInfo(file.name);
+        metaFileType.textContent = `${fileTypeInfo.label} (Cục bộ)`;
+        previewBoxTypeBadge.textContent = fileTypeInfo.label;
+
+        linkGithubRepo.classList.add('display-none');
+        btnCopyDownloadUrl.classList.add('display-none');
+        btnDirectDownload.classList.add('display-none');
+
+        previewCodeText.classList.add('display-none');
+        previewImageWrapper.classList.add('display-none');
+        previewPdfWrapper.classList.add('display-none');
+        btnCopyContent.classList.add('display-none');
+        currentLoadedFileRawText = '';
+
+        if (fileTypeInfo.category === 'pdf') {
+          previewPdfWrapper.classList.remove('display-none');
+          const arrayBuffer = await file.arrayBuffer();
+          await loadPdfDocument(arrayBuffer, file.name);
+        } else if (fileTypeInfo.category === 'image') {
+          previewImageWrapper.classList.remove('display-none');
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            previewImgElement.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        } else if (fileTypeInfo.category === 'code') {
+          previewCodeText.classList.remove('display-none');
+          btnCopyContent.classList.remove('display-none');
+          const text = await file.text();
+          currentLoadedFileRawText = text;
+          previewCodeText.textContent = text;
+        } else {
+          previewCodeText.classList.remove('display-none');
+          previewCodeText.textContent = `Đã mở tập tin cục bộ "${file.name}" (${formatBytes(file.size)}).\nĐịnh dạng này không hỗ trợ xem trước văn bản trực tiếp.`;
+        }
+
+        showToast(`Đã mở tập tin: ${file.name}`);
+      }
+
       // Khởi tạo và gắn kết các sự kiện tương tác
       function initializeEvents() {
         // Nút Duyệt kho
@@ -1606,7 +1861,7 @@
           loadRepositoryRoot();
         });
 
-        // Nhấn Enter trong các ô nhập cấu hình
+        // Nhấn Enter trong các ô nhập cấu hình & tự động phân tích URL
         [inputOwner, inputRepo, inputPath].forEach((input) => {
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -1614,12 +1869,12 @@
               loadRepositoryRoot();
             }
           });
-        });
 
-        // Breadcrumb về gốc
-        breadcrumbRoot.addEventListener('click', () => {
-          inputPath.value = '';
-          loadRepositoryRoot();
+          input.addEventListener('paste', (e) => {
+            setTimeout(() => {
+              handlePotentialUrlPaste(input);
+            }, 50);
+          });
         });
 
         // Lọc tìm kiếm nhanh
@@ -1648,12 +1903,6 @@
           });
         });
 
-        // Làm mới dữ liệu cây thư mục
-        btnRefreshTree.addEventListener('click', () => {
-          loadRepositoryRoot();
-          showToast('Đã làm mới dữ liệu cây thư mục');
-        });
-
         // Sao chép nội dung văn bản
         btnCopyContent.addEventListener('click', async () => {
           if (!currentLoadedFileRawText) {
@@ -1676,6 +1925,42 @@
               showToast('Đã sao chép link tải về vào bộ nhớ tạm!');
             } catch (err) {
               showToast('Lỗi khi sao chép link');
+            }
+          }
+        });
+
+        // Kéo và thả tập tin (Drag and Drop)
+        window.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+
+        window.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleLocalFilePreview(e.dataTransfer.files[0]);
+          }
+        });
+
+        // Dán tập tin từ clipboard (Paste)
+        window.addEventListener('paste', (e) => {
+          // Nếu đang focus vào ô input thì không chặn
+          if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+            return;
+          }
+          if (e.clipboardData) {
+            if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+              e.preventDefault();
+              handleLocalFilePreview(e.clipboardData.files[0]);
+            } else {
+              const text = e.clipboardData.getData('text');
+              const parsed = parseGitHubUrl(text);
+              if (parsed) {
+                inputOwner.value = parsed.owner;
+                inputRepo.value = parsed.repo;
+                inputPath.value = parsed.path;
+                loadRepositoryRoot();
+                showToast(`Đã dán và duyệt link GitHub: ${parsed.owner}/${parsed.repo}`);
+              }
             }
           }
         });
