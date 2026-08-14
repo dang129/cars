@@ -514,7 +514,7 @@
     /* Trình đọc PDF tích hợp (PDF Canvas Viewer) */
     .preview-pdf-content {
       width: 100%;
-      min-height: 480px;
+      min-height: 200px;
       display: flex;
       flex-direction: column;
       background-color: var(--bg-surface);
@@ -585,29 +585,25 @@
     }
 
     .pdf-canvas-viewport {
-      flex: 1;
       width: 100%;
-      min-height: 420px;
-      max-height: 680px;
-      overflow: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
+      min-height: 200px;
+      overflow-x: auto;
+      overflow-y: visible;
+      text-align: center;
       padding: 0.4rem;
       background-color: var(--bg-page);
       -webkit-overflow-scrolling: touch;
     }
 
     .pdf-canvas-page {
-      display: block;
+      display: inline-block;
       margin: 0 auto;
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       background-color: var(--bg-surface);
       box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.08);
-      max-width: 100%;
-      height: auto;
+      max-width: none;
+      vertical-align: top;
     }
 
     .pdf-status-msg {
@@ -893,14 +889,11 @@
                   </div>
 
                   <div id="pdf-fit-group" class="pdf-toolbar-group">
-                    <button type="button" id="btn-pdf-fit-width" class="btn-action btn-compact" title="Vừa chiều rộng khung nhìn">
+                    <button type="button" id="btn-pdf-fit-page" class="btn-action btn-compact" title="Vừa trang hiển thị">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="8 3 4 3 4 7"></polyline>
-                        <polyline points="4 17 4 21 8 21"></polyline>
-                        <polyline points="16 3 20 3 20 7"></polyline>
-                        <polyline points="20 17 20 21 16 21"></polyline>
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
                       </svg>
-                      <span>Vừa chiều rộng</span>
+                      <span>Vừa trang</span>
                     </button>
                   </div>
                 </div>
@@ -1051,7 +1044,7 @@
       const pdfTotalPages = document.getElementById('pdf-total-pages');
       const btnPdfZoomOut = document.getElementById('btn-pdf-zoom-out');
       const btnPdfZoomIn = document.getElementById('btn-pdf-zoom-in');
-      const btnPdfFitWidth = document.getElementById('btn-pdf-fit-width');
+      const btnPdfFitPage = document.getElementById('btn-pdf-fit-page');
       const pdfZoomPercent = document.getElementById('pdf-zoom-percent');
       const pdfCanvasContainer = document.getElementById('pdf-canvas-container');
       const pdfLoadingIndicator = document.getElementById('pdf-loading-indicator');
@@ -1072,6 +1065,7 @@
       let currentPdfDoc = null;
       let currentPdfPageNum = 1;
       let currentPdfScale = 1.0;
+      let isPdfFitPageMode = true;
       let currentPdfRenderTask = null;
       let isPdfRendering = false;
 
@@ -1287,6 +1281,15 @@
         try {
           isPdfRendering = true;
           const page = await currentPdfDoc.getPage(pageNum);
+
+          // Nếu đang ở chế độ Vừa trang, tự động tính toán lại tỷ lệ theo kích thước bề rộng của trang
+          if (isPdfFitPageMode) {
+            const unscaledViewport = page.getViewport({ scale: 1.0 });
+            const availableWidth = Math.max((pdfCanvasContainer.clientWidth || 600) - 24, 200);
+            const scaleWidth = availableWidth / unscaledViewport.width;
+            currentPdfScale = Math.min(Math.max(scaleWidth, 0.3), 3.0);
+          }
+
           const viewport = page.getViewport({ scale: currentPdfScale });
 
           // Hỗ trợ hiển thị sắc nét trên màn hình Retina / High DPI
@@ -1336,19 +1339,11 @@
         }
       }
 
-      // Căn tỷ lệ PDF vừa với khung nhìn
-      async function fitPdfToCurrentWidth() {
+      // Căn tỷ lệ PDF vừa vặn trọn vẹn trang vào khung nhìn
+      async function fitPdfToCurrentPage() {
         if (!currentPdfDoc) return;
-        try {
-          const page = await currentPdfDoc.getPage(currentPdfPageNum);
-          const unscaledViewport = page.getViewport({ scale: 1.0 });
-          const availableWidth = (pdfCanvasContainer.clientWidth || 600) - 24;
-          const targetWidth = Math.max(availableWidth, 240);
-          currentPdfScale = Math.min(Math.max(targetWidth / unscaledViewport.width, 0.4), 3.0);
-          await renderPdfPage(currentPdfPageNum);
-        } catch (fitErr) {
-          console.error('Lỗi tính toán kích thước vừa chiều rộng:', fitErr);
-        }
+        isPdfFitPageMode = true;
+        await renderPdfPage(currentPdfPageNum);
       }
 
       // Nạp dữ liệu tài liệu PDF từ đường dẫn URL GitHub
@@ -1382,9 +1377,10 @@
           const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
           currentPdfDoc = await loadingTask.promise;
           currentPdfPageNum = 1;
+          isPdfFitPageMode = true;
 
-          // Tự động tính tỷ lệ để căn vừa bề rộng
-          await fitPdfToCurrentWidth();
+          // Tự động tính tỷ lệ để căn vừa trang đầu tiên
+          await renderPdfPage(1);
         } catch (pdfErr) {
           pdfLoadingIndicator.classList.add('display-none');
           pdfErrorContainer.classList.remove('display-none');
@@ -1729,21 +1725,23 @@
 
         btnPdfZoomOut.addEventListener('click', () => {
           if (currentPdfDoc && !isPdfRendering) {
-            currentPdfScale = Math.max(0.4, currentPdfScale - 0.2);
+            isPdfFitPageMode = false;
+            currentPdfScale = Math.max(0.3, Number((currentPdfScale - 0.2).toFixed(2)));
             renderPdfPage(currentPdfPageNum);
           }
         });
 
         btnPdfZoomIn.addEventListener('click', () => {
           if (currentPdfDoc && !isPdfRendering) {
-            currentPdfScale = Math.min(3.0, currentPdfScale + 0.2);
+            isPdfFitPageMode = false;
+            currentPdfScale = Math.min(4.0, Number((currentPdfScale + 0.2).toFixed(2)));
             renderPdfPage(currentPdfPageNum);
           }
         });
 
-        btnPdfFitWidth.addEventListener('click', () => {
+        btnPdfFitPage.addEventListener('click', () => {
           if (currentPdfDoc && !isPdfRendering) {
-            fitPdfToCurrentWidth();
+            fitPdfToCurrentPage();
           }
         });
 
@@ -1753,7 +1751,9 @@
           clearTimeout(resizeTimer);
           resizeTimer = setTimeout(() => {
             if (currentPdfDoc && !previewPdfWrapper.classList.contains('display-none')) {
-              fitPdfToCurrentWidth();
+              if (isPdfFitPageMode) {
+                fitPdfToCurrentPage();
+              }
             }
           }, 200);
         });
