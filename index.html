@@ -1059,6 +1059,9 @@
       let currentLoadedFileItem = null;
       let totalLoadedFolders = 0;
       let totalLoadedFiles = 0;
+      let cachedRepoOwner = '';
+      let cachedRepoName = '';
+      let cachedTreeData = null;
 
       // Trạng thái trình đọc PDF
       let currentPdfDoc = null;
@@ -1160,22 +1163,39 @@
           .replace(/Đ/g, 'D');
       }
 
-      // Nạp toàn bộ cây thư mục từ GitHub qua Git Trees API (chỉ tốn đúng 1 lượt gọi)
+      // Nạp toàn bộ cây thư mục từ GitHub qua Git Trees API (hỗ trợ thử nhiều ref: HEAD, main, master)
       async function fetchGitHubTree(owner, repo) {
-        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/HEAD?recursive=1`;
-        const response = await fetch(url);
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error(`Không tìm thấy kho lưu trữ "${owner}/${repo}" hoặc nhánh mặc định (Mã lỗi 404).`);
-          } else if (response.status === 403) {
-            throw new Error(`Đã vượt quá giới hạn truy cập tạm thời của GitHub API (Mã lỗi 403). Vui lòng thử lại sau.`);
-          } else if (response.status === 409) {
-            throw new Error(`Kho lưu trữ "${owner}/${repo}" đang trống hoặc chưa có commit nào (Mã lỗi 409).`);
-          } else {
-            throw new Error(`GitHub API phản hồi mã lỗi HTTP ${response.status}: ${response.statusText}`);
+        const refsToTry = ['HEAD', 'main', 'master'];
+        let lastError = null;
+
+        for (const ref of refsToTry) {
+          try {
+            const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${ref}?recursive=1`;
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              return data;
+            }
+            if (response.status === 403) {
+              throw new Error('Đã vượt quá giới hạn truy cập tạm thời của GitHub API (Mã lỗi 403). Vui lòng thử lại sau ít phút.');
+            }
+            if (response.status === 409) {
+              throw new Error(`Kho lưu trữ "${owner}/${repo}" đang trống hoặc chưa có commit nào (Mã lỗi 409).`);
+            }
+            if (response.status === 404) {
+              lastError = new Error(`Không tìm thấy kho lưu trữ "${owner}/${repo}" hoặc nhánh "${ref}" (Mã lỗi 404).`);
+              continue;
+            }
+            lastError = new Error(`GitHub API phản hồi mã lỗi HTTP ${response.status}: ${response.statusText}`);
+          } catch (err) {
+            if (err.message.includes('403') || err.message.includes('409')) {
+              throw err;
+            }
+            lastError = err;
           }
         }
-        return await response.json();
+
+        throw lastError || new Error(`Không thể nạp dữ liệu từ kho "${owner}/${repo}". Vui lòng kiểm tra lại tên tài khoản và tên kho.`);
       }
 
       // Xây dựng cấu trúc cây phân cấp từ danh sách Git Trees
@@ -1184,7 +1204,7 @@
         const prefixWithSlash = cleanPrefix ? cleanPrefix + '/' : '';
 
         const rootNode = {
-          name: '',
+          name: cleanPrefix ? cleanPrefix.split('/').pop() : '',
           path: cleanPrefix,
           type: 'dir',
           children: []
@@ -1195,8 +1215,13 @@
         (treeItems || []).forEach((item) => {
           const fullPath = item.path || '';
 
-          // Nếu có lọc theo đường dẫn, chỉ lấy các mục bên trong đường dẫn đó hoặc đúng mục đó
+          // Nếu có lọc theo đường dẫn:
           if (cleanPrefix) {
+            // 1. Bỏ qua nếu là chính thư mục gốc đang lọc (vì rootNode chính là thư mục đó)
+            if (fullPath === cleanPrefix && item.type === 'tree') {
+              return;
+            }
+            // 2. Bỏ qua các mục không thuộc đường dẫn đang lọc
             if (fullPath !== cleanPrefix && !fullPath.startsWith(prefixWithSlash)) {
               return;
             }
@@ -1207,7 +1232,7 @@
           if (cleanPrefix && fullPath.startsWith(prefixWithSlash)) {
             relativePath = fullPath.substring(prefixWithSlash.length);
           } else if (cleanPrefix && fullPath === cleanPrefix) {
-            // Xử lý chính xác khi người dùng nhập đường dẫn của 1 tập tin hoặc 1 thư mục lá
+            // Trường hợp người dùng nhập chính xác đường dẫn của 1 tập tin đơn lẻ
             relativePath = cleanPrefix.split('/').pop() || fullPath;
           } else {
             relativePath = fullPath;
@@ -1567,8 +1592,8 @@
         }
       }
 
-      // Nạp toàn bộ cây thư mục (chỉ 1 lần gọi API duy nhất)
-      async function loadRepositoryRoot() {
+      // Nạp toàn bộ cây thư mục (nạp 1 lần từ API, sau đó tái sử dụng dữ liệu trong bộ nhớ khi lọc đường dẫn)
+      async function loadRepositoryRoot(forceRefresh = false) {
         // Tự động xử lý nếu người dùng dán nguyên URL GitHub vào một trong các ô
         if (handlePotentialUrlPaste(inputOwner) || handlePotentialUrlPaste(inputRepo)) {
           // Đã parse tự động
@@ -1585,27 +1610,47 @@
           return;
         }
 
-        treeStatusMessage.classList.remove('display-none');
-        treeStatusMessage.innerHTML = `
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          <p>Đang nạp toàn bộ dữ liệu từ <strong>${escapeHtml(owner)}/${escapeHtml(repo)}</strong>...</p>
-        `;
-        rootTreeList.classList.add('display-none');
-        rootTreeList.innerHTML = '';
-        totalLoadedFolders = 0;
-        totalLoadedFiles = 0;
         updateBreadcrumb(path);
 
+        // Kiểm tra nếu đã có dữ liệu trong bộ nhớ và không yêu cầu nạp lại từ mạng
+        const hasCachedData = !forceRefresh && cachedRepoOwner.toLowerCase() === owner.toLowerCase() && cachedRepoName.toLowerCase() === repo.toLowerCase() && cachedTreeData;
+
+        if (!hasCachedData) {
+          treeStatusMessage.classList.remove('display-none');
+          treeStatusMessage.innerHTML = `
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <p>Đang nạp toàn bộ dữ liệu từ <strong>${escapeHtml(owner)}/${escapeHtml(repo)}</strong>...</p>
+          `;
+          rootTreeList.classList.add('display-none');
+          rootTreeList.innerHTML = '';
+        }
+
+        totalLoadedFolders = 0;
+        totalLoadedFiles = 0;
+
         try {
-          const data = await fetchGitHubTree(owner, repo);
+          let treeItems = null;
+          if (hasCachedData) {
+            treeItems = cachedTreeData;
+          } else {
+            const data = await fetchGitHubTree(owner, repo);
+            if (data && Array.isArray(data.tree)) {
+              cachedRepoOwner = owner;
+              cachedRepoName = repo;
+              cachedTreeData = data.tree;
+              treeItems = data.tree;
+            }
+          }
+
           treeStatusMessage.classList.add('display-none');
           rootTreeList.classList.remove('display-none');
+          rootTreeList.innerHTML = '';
 
-          if (data && Array.isArray(data.tree) && data.tree.length > 0) {
-            const rootHierarchy = buildFullTreeHierarchy(data.tree, path, owner, repo);
+          if (treeItems && treeItems.length > 0) {
+            const rootHierarchy = buildFullTreeHierarchy(treeItems, path, owner, repo);
             renderTreeHierarchy(rootHierarchy, rootTreeList, true);
 
             if (totalLoadedFolders === 0 && totalLoadedFiles === 0) {
@@ -1856,9 +1901,9 @@
 
       // Khởi tạo và gắn kết các sự kiện tương tác
       function initializeEvents() {
-        // Nút Duyệt kho
+        // Nút Duyệt kho (làm mới dữ liệu từ GitHub)
         btnFetchRepo.addEventListener('click', () => {
-          loadRepositoryRoot();
+          loadRepositoryRoot(true);
         });
 
         // Nhấn Enter trong các ô nhập cấu hình & tự động phân tích URL
@@ -1866,7 +1911,7 @@
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
-              loadRepositoryRoot();
+              loadRepositoryRoot(input !== inputPath);
             }
           });
 
