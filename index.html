@@ -631,6 +631,33 @@
       min-height: 200px;
     }
 
+    .local-file-card-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.8rem;
+      padding: 0.8rem 1.2rem;
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-page);
+      width: 100%;
+      max-width: 480px;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .local-file-card-box.drag-over {
+      border-color: var(--primary-color);
+      background-color: var(--bg-surface);
+    }
+
+    .local-file-note {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin: 0;
+      text-align: center;
+    }
+
     .state-error {
       color: #dc2626;
       background-color: #fef2f2;
@@ -762,7 +789,6 @@
 
       <div id="tree-footer-info" class="tree-footer-bar">
         <span id="status-item-count">0 mục</span>
-        <span id="status-api-info" class="badge-status">GitHub REST API v3</span>
       </div>
     </section>
 
@@ -771,6 +797,15 @@
       <div id="preview-header-bar" class="panel-header">
         <h2 id="preview-heading">Chi Tiết &amp; Xem Trước</h2>
         <div id="preview-actions-toolbar" class="panel-actions">
+          <input type="file" id="input-local-file-picker" class="display-none" accept="*/*">
+          <button type="button" id="btn-open-local-file" class="btn-action btn-compact" title="Mở tập tin từ máy tính">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+              <line x1="12" y1="10" x2="12" y2="16"></line>
+              <line x1="9" y1="13" x2="15" y2="13"></line>
+            </svg>
+            <span>Mở Tập Tin Trên Máy</span>
+          </button>
           <button type="button" id="btn-copy-download-url" class="btn-action btn-compact display-none" title="Sao chép liên kết tải về">Sao chép link</button>
           <button type="button" id="btn-direct-download" class="btn-action btn-primary btn-compact display-none" title="Tải tập tin về máy">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -793,7 +828,19 @@
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
           <p><strong>Chưa chọn tập tin nào</strong></p>
-          <p>Hãy bấm vào một tập tin bất kỳ trong cây thư mục phía trên để xem thông tin chi tiết và nội dung xem trước.</p>
+          <p>Hãy bấm vào một tập tin bất kỳ trong cây thư mục phía trên hoặc mở tập tin trực tiếp từ máy tính của bạn.</p>
+          
+          <div id="local-file-card-box" class="local-file-card-box">
+            <button type="button" id="btn-open-local-file-main" class="btn-action btn-primary" title="Mở tập tin từ máy tính">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                <line x1="12" y1="10" x2="12" y2="16"></line>
+                <line x1="9" y1="13" x2="15" y2="13"></line>
+              </svg>
+              <span>Mở Tập Tin Trên Máy</span>
+            </button>
+            <p id="local-file-instruction-note" class="local-file-note">Có thể dán, Ctrl-V, kéo thả tập tin.</p>
+          </div>
         </div>
 
         <div id="active-file-content-area" class="file-active-column display-none">
@@ -1018,11 +1065,14 @@
       const rootTreeList = document.getElementById('root-tree-list');
       const treeStatusMessage = document.getElementById('tree-status-message');
       const statusItemCount = document.getElementById('status-item-count');
-      const statusApiInfo = document.getElementById('status-api-info');
       const btnExpandAll = document.getElementById('btn-expand-all');
       const btnCollapseAll = document.getElementById('btn-collapse-all');
 
       const emptySelectionPlaceholder = document.getElementById('empty-selection-placeholder');
+      const localFileCardBox = document.getElementById('local-file-card-box');
+      const btnOpenLocalFile = document.getElementById('btn-open-local-file');
+      const btnOpenLocalFileMain = document.getElementById('btn-open-local-file-main');
+      const inputLocalFilePicker = document.getElementById('input-local-file-picker');
       const activeFileContentArea = document.getElementById('active-file-content-area');
       const metaFileName = document.getElementById('meta-file-name');
       const metaFileSize = document.getElementById('meta-file-size');
@@ -1680,9 +1730,6 @@
           const formattedFiles = new Intl.NumberFormat('vi-VN').format(totalLoadedFiles);
           statusItemCount.textContent = `${formattedFolders} thư mục, ${formattedFiles} tập tin (Tổng ${formattedTotal} mục)`;
         }
-        if (statusApiInfo) {
-          statusApiInfo.textContent = 'Git Trees API (1 lần nạp toàn bộ)';
-        }
       }
 
       // Lọc danh sách trong cây thư mục (Hỗ trợ chuẩn tiếng Việt NFC và tìm kiếm không dấu)
@@ -1974,7 +2021,46 @@
           }
         });
 
+        // Mở tập tin từ máy tính qua nút bấm
+        if (btnOpenLocalFile && inputLocalFilePicker) {
+          btnOpenLocalFile.addEventListener('click', () => {
+            inputLocalFilePicker.click();
+          });
+        }
+
+        if (btnOpenLocalFileMain && inputLocalFilePicker) {
+          btnOpenLocalFileMain.addEventListener('click', () => {
+            inputLocalFilePicker.click();
+          });
+        }
+
+        if (inputLocalFilePicker) {
+          inputLocalFilePicker.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              handleLocalFilePreview(e.target.files[0]);
+              inputLocalFilePicker.value = '';
+            }
+          });
+        }
+
         // Kéo và thả tập tin (Drag and Drop)
+        if (localFileCardBox) {
+          localFileCardBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            localFileCardBox.classList.add('drag-over');
+          });
+          localFileCardBox.addEventListener('dragleave', () => {
+            localFileCardBox.classList.remove('drag-over');
+          });
+          localFileCardBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            localFileCardBox.classList.remove('drag-over');
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              handleLocalFilePreview(e.dataTransfer.files[0]);
+            }
+          });
+        }
+
         window.addEventListener('dragover', (e) => {
           e.preventDefault();
         });
