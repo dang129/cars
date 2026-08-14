@@ -10,9 +10,11 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      hyphens: none;
+      -webkit-hyphens: none;
     }
 
-    /* 2. Biến CSS - 4 màu chủ đạo chuẩn mực */
+    /* 2. Biến CSS - 4 nhóm màu chủ đạo */
     :root {
       --bg-page: #f8fafc;
       --bg-surface: #ffffff;
@@ -24,11 +26,6 @@
 
       --radius-sm: 0.25rem;
       --radius-md: 0.5rem;
-      --radius-lg: 0.75rem;
-
-      --pad-xs: 0.25rem;
-      --pad-sm: 0.5rem;
-      --pad-md: 1rem;
     }
 
     /* 3. Bố cục tổng quan trang */
@@ -44,6 +41,8 @@
       min-height: 100vh;
       word-break: normal;
       overflow-wrap: break-word;
+      hyphens: none;
+      -webkit-hyphens: none;
     }
 
     h1 {
@@ -102,33 +101,40 @@
       vertical-align: middle;
     }
 
-    /* 4. Khối giao diện chuyên biệt */
+    /* 4. Khối giao diện thành phần */
     .author-block {
       text-align: right;
       font-size: 1.2rem;
       font-style: normal;
       font-weight: normal;
       color: var(--text-muted);
-      margin-bottom: 1rem;
-      padding-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding-right: 0.25rem;
     }
 
     .main-layout {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.75rem;
       width: 100%;
     }
 
-    .card-block {
+    /* Khối thẻ làm phẳng, tối ưu chiều ngang điện thoại */
+    .flat-card {
       background-color: var(--bg-surface);
       border: 2px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 1rem;
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
       width: 100%;
     }
 
-    /* Khối cấu hình Repository */
+    @media (min-width: 768px) {
+      .flat-card {
+        padding: 1rem;
+      }
+    }
+
+    /* Cấu hình kho GitHub */
     .config-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -154,15 +160,15 @@
       color: var(--text-main);
     }
 
-    .form-input, .form-select {
+    .form-input {
       width: 100%;
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 0.75rem;
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       background-color: var(--bg-surface);
     }
 
-    .form-input:focus, .form-select:focus {
+    .form-input:focus {
       outline: none;
       border-color: var(--primary-color);
     }
@@ -171,8 +177,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
+      gap: 0.4rem;
+      padding: 0.4rem 0.8rem;
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       background-color: var(--bg-surface);
@@ -209,7 +215,7 @@
       color: var(--bg-surface);
     }
 
-    /* Thanh điều hướng Breadcrumb và Tìm kiếm */
+    /* Thanh Breadcrumb và Tìm kiếm */
     .nav-bar-grid {
       display: flex;
       flex-direction: column;
@@ -230,14 +236,14 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 0.25rem;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
     }
 
     .breadcrumb-item {
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      padding: 0.25rem 0.5rem;
+      padding: 0.2rem 0.4rem;
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       background-color: var(--bg-page);
@@ -258,68 +264,67 @@
     .breadcrumb-current-label {
       font-weight: bold;
       color: var(--text-main);
+      word-break: normal;
+      overflow-wrap: anywhere;
     }
 
     .search-wrapper {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       align-items: center;
       width: 100%;
       max-width: 400px;
     }
 
-    /* Khối không gian làm việc chính 2 cột */
-    .workspace-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1rem;
-      width: 100%;
-    }
-
-    @media (min-width: 992px) {
-      .workspace-layout {
-        grid-template-columns: 1fr 1.2fr;
-      }
-    }
-
+    /* Khối không gian làm việc xếp dọc: Thư mục ở trên, Xem trước ở dưới */
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.4rem;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
 
     .panel-actions {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       align-items: center;
       flex-wrap: wrap;
     }
 
-    /* Cây thư mục */
+    /* Cây thư mục (Khối trên) - Hỗ trợ cuộn ngang trên điện thoại */
     .tree-scroll-box {
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       background-color: var(--bg-surface);
-      min-height: 480px;
-      max-height: 640px;
+      min-height: 240px;
+      max-height: 360px;
       overflow-y: auto;
-      padding: 0.5rem;
+      overflow-x: auto;
+      padding: 0.4rem;
+      -webkit-overflow-scrolling: touch;
     }
 
     .tree-list {
       list-style: none;
       padding: 0;
       margin: 0;
+      min-width: 100%;
+      width: max-content;
     }
 
     .tree-sub-list {
       list-style: none;
-      padding-left: 1.2rem;
+      padding-left: 0.5rem;
       margin: 0;
       display: none;
+    }
+
+    @media (min-width: 768px) {
+      .tree-sub-list {
+        padding-left: 0.75rem;
+      }
     }
 
     .tree-node.open > .tree-sub-list {
@@ -329,14 +334,14 @@
     .tree-row {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.5rem;
+      gap: 0.4rem;
+      padding: 0.35rem 0.4rem;
       border-radius: var(--radius-sm);
       cursor: pointer;
       user-select: none;
-      transition: background-color 0.15s ease;
-      margin-bottom: 0.15rem;
+      margin-bottom: 0.1rem;
       border: 2px solid transparent;
+      white-space: nowrap;
     }
 
     .tree-row:hover {
@@ -351,13 +356,14 @@
     }
 
     .arrow-icon {
-      width: 1rem;
-      height: 1rem;
+      width: 0.9rem;
+      height: 0.9rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       color: var(--text-muted);
       transition: transform 0.2s ease;
+      font-size: 0.8rem;
     }
 
     .tree-node.open > .tree-row .arrow-icon {
@@ -368,64 +374,52 @@
       opacity: 0;
     }
 
-    .folder-title {
+    .folder-title, .file-title {
       color: var(--text-main);
-      font-weight: bold;
       flex-grow: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
-    .file-title {
-      color: var(--text-main);
-      flex-grow: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .folder-title {
+      font-weight: bold;
     }
 
     .file-size-tag {
       font-size: 0.95rem;
       color: var(--text-muted);
-      white-space: nowrap;
+      margin-left: 0.5rem;
     }
 
     .tree-footer-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 0.5rem;
+      margin-top: 0.4rem;
       font-size: 1.1rem;
       color: var(--text-muted);
     }
 
-    /* Bảng chi tiết và xem trước */
-    .details-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      border: 2px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      background-color: var(--bg-surface);
-      min-height: 480px;
-      padding: 1rem;
-    }
-
+    /* Bảng chi tiết và xem trước làm phẳng hoàn toàn */
     .file-meta-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 0.5rem;
+      gap: 0.4rem;
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       padding: 0.5rem;
       background-color: var(--bg-page);
       font-size: 1.1rem;
+      margin-bottom: 0.5rem;
     }
 
-    @media (min-width: 600px) {
+    @media (min-width: 640px) {
       .file-meta-grid {
         grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .file-meta-grid {
+        grid-template-columns: 1.2fr 0.8fr 1.5fr 1fr;
       }
     }
 
@@ -443,7 +437,8 @@
 
     .meta-value {
       color: var(--text-main);
-      word-break: break-all;
+      word-break: normal;
+      overflow-wrap: anywhere;
     }
 
     .text-bold {
@@ -453,8 +448,9 @@
     .file-actions-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.4rem;
       align-items: center;
+      margin-bottom: 0.5rem;
     }
 
     .preview-box-wrapper {
@@ -464,23 +460,31 @@
       background-color: var(--bg-page);
       display: flex;
       flex-direction: column;
-      min-height: 320px;
+      min-height: 280px;
     }
 
     .preview-box-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.5rem 1rem;
+      padding: 0.4rem 0.6rem;
       border-bottom: 2px solid var(--border-color);
       background-color: var(--bg-surface);
       font-weight: bold;
       font-size: 1.1rem;
+      gap: 0.5rem;
+    }
+
+    .preview-box-title-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-main);
     }
 
     .preview-code-content {
       padding: 0.5rem;
-      max-height: 400px;
+      max-height: 520px;
       overflow: auto;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 1.05rem;
@@ -493,18 +497,130 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 1rem;
-      max-height: 400px;
+      padding: 0.5rem;
+      max-height: 520px;
       overflow: auto;
       background-color: var(--bg-surface);
     }
 
     .preview-image-tag {
       max-width: 100%;
-      max-height: 360px;
+      max-height: 480px;
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       object-fit: contain;
+    }
+
+    /* Trình đọc PDF tích hợp (PDF Canvas Viewer) */
+    .preview-pdf-content {
+      width: 100%;
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-surface);
+      border-radius: var(--radius-sm);
+    }
+
+    .pdf-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.4rem;
+      background-color: var(--bg-page);
+      border-bottom: 2px solid var(--border-color);
+      max-width: 100%;
+    }
+
+    .pdf-toolbar-group {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      max-width: 100%;
+    }
+
+    .pdf-page-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 1.1rem;
+      font-weight: normal;
+      color: var(--text-main);
+      padding: 0 0.2rem;
+      white-space: nowrap;
+    }
+
+    .pdf-page-input {
+      width: 3.6rem;
+      padding: 0.2rem 0.25rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--text-main);
+      background-color: var(--bg-surface);
+      -moz-appearance: textfield;
+    }
+
+    .pdf-page-input::-webkit-outer-spin-button,
+    .pdf-page-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .pdf-page-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    .pdf-zoom-text {
+      font-size: 1.1rem;
+      min-width: 3.2rem;
+      text-align: center;
+      white-space: nowrap;
+      color: var(--text-main);
+    }
+
+    .pdf-canvas-viewport {
+      flex: 1;
+      width: 100%;
+      min-height: 420px;
+      max-height: 680px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0.4rem;
+      background-color: var(--bg-page);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .pdf-canvas-page {
+      display: block;
+      margin: 0 auto;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+      box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.08);
+      max-width: 100%;
+      height: auto;
+    }
+
+    .pdf-status-msg {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      text-align: center;
+      padding: 1rem;
+      color: var(--text-muted);
+      width: 100%;
+      min-height: 200px;
     }
 
     .state-message-box {
@@ -512,11 +628,11 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       text-align: center;
-      padding: 2rem 1rem;
+      padding: 1rem;
       color: var(--text-muted);
-      min-height: 250px;
+      min-height: 200px;
     }
 
     .state-error {
@@ -524,22 +640,21 @@
       background-color: #fef2f2;
       border: 2px solid #fecaca;
       border-radius: var(--radius-sm);
-      padding: 1rem;
-      margin: 0.5rem;
+      padding: 0.5rem;
+      margin: 0.4rem 0;
     }
 
     .badge-status {
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      padding: 0.25rem 0.5rem;
+      padding: 0.2rem 0.4rem;
       border: 2px solid var(--border-color);
       border-radius: var(--radius-sm);
       background-color: var(--bg-page);
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       white-space: nowrap;
     }
-
 
     .display-none {
       display: none;
@@ -548,7 +663,7 @@
     .file-active-column {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      width: 100%;
     }
 
     /* Thông báo Toast */
@@ -563,7 +678,7 @@
       padding: 0.5rem 1rem;
       border-radius: var(--radius-sm);
       border: 2px solid var(--text-main);
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
@@ -581,7 +696,7 @@
 
   <main id="main-content" class="main-layout">
     <!-- Khối Cấu Hình Kho Lưu Trữ (Repository Configuration) -->
-    <section id="config-section" class="card-block" aria-label="Cấu hình kho lưu trữ GitHub">
+    <section id="config-section" class="flat-card" aria-label="Cấu hình kho lưu trữ GitHub">
       <div id="config-inputs-grid" class="config-grid">
         <div id="group-owner" class="form-group">
           <label for="input-owner" class="form-label">Tài khoản / Tổ chức (Owner):</label>
@@ -628,119 +743,177 @@
       </div>
     </section>
 
-    <!-- Khối không gian làm việc chính 2 cột -->
-    <section id="workspace-section" class="workspace-layout" aria-label="Khu vực cây thư mục và xem trước">
-      <!-- Cột Trái: Cây Thư Mục & Tập Tin (Tree View) -->
-      <div id="tree-column-card" class="card-block">
-        <div id="tree-header-bar" class="panel-header">
-          <h2 id="tree-heading">Cây Thư Mục &amp; Tập Tin</h2>
-          <div id="tree-actions-toolbar" class="panel-actions">
-            <button type="button" id="btn-expand-all" class="btn-action btn-compact" title="Mở rộng các thư mục đã nạp">Mở tất cả</button>
-            <button type="button" id="btn-collapse-all" class="btn-action btn-compact" title="Thu gọn các thư mục">Thu gọn</button>
-            <button type="button" id="btn-refresh-tree" class="btn-action btn-compact" title="Làm mới dữ liệu">Làm mới</button>
-          </div>
-        </div>
-
-        <div id="tree-container" class="tree-scroll-box">
-          <div id="tree-status-message" class="state-message-box">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            <p>Đang chuẩn bị tải dữ liệu từ GitHub...</p>
-          </div>
-          <ul id="root-tree-list" class="tree-list display-none"></ul>
-        </div>
-
-        <div id="tree-footer-info" class="tree-footer-bar">
-          <span id="status-item-count">0 mục</span>
-          <span id="status-api-info" class="badge-status">GitHub REST API v3</span>
+    <!-- Khối Chọn Thư Mục & Tập Tin ở trên -->
+    <section id="tree-section" class="flat-card" aria-label="Cây thư mục và tập tin">
+      <div id="tree-header-bar" class="panel-header">
+        <h2 id="tree-heading">Cây Thư Mục &amp; Tập Tin</h2>
+        <div id="tree-actions-toolbar" class="panel-actions">
+          <button type="button" id="btn-expand-all" class="btn-action btn-compact" title="Mở rộng các thư mục đã nạp">Mở tất cả</button>
+          <button type="button" id="btn-collapse-all" class="btn-action btn-compact" title="Thu gọn các thư mục">Thu gọn</button>
+          <button type="button" id="btn-refresh-tree" class="btn-action btn-compact" title="Làm mới dữ liệu">Làm mới</button>
         </div>
       </div>
 
-      <!-- Cột Phải: Chi Tiết Tập Tin & Xem Trước Trực Tiếp (File Details & Preview) -->
-      <div id="preview-column-card" class="card-block">
-        <div id="preview-header-bar" class="panel-header">
-          <h2 id="preview-heading">Chi Tiết &amp; Xem Trước</h2>
-          <div id="preview-actions-toolbar" class="panel-actions">
-            <button type="button" id="btn-copy-download-url" class="btn-action btn-compact display-none" title="Sao chép liên kết tải về">Sao chép link</button>
-            <button type="button" id="btn-direct-download" class="btn-action btn-primary btn-compact display-none" title="Tải tập tin về máy">Tải xuống</button>
-          </div>
+      <div id="tree-container" class="tree-scroll-box">
+        <div id="tree-status-message" class="state-message-box">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <p>Đang tải dữ liệu từ GitHub...</p>
+        </div>
+        <ul id="root-tree-list" class="tree-list display-none"></ul>
+      </div>
+
+      <div id="tree-footer-info" class="tree-footer-bar">
+        <span id="status-item-count">0 mục</span>
+        <span id="status-api-info" class="badge-status">GitHub REST API v3</span>
+      </div>
+    </section>
+
+    <!-- Khối Chi Tiết & Xem Trước Trực Tiếp ở dưới (Toàn chiều ngang) -->
+    <section id="preview-section" class="flat-card" aria-label="Chi tiết và xem trước tập tin">
+      <div id="preview-header-bar" class="panel-header">
+        <h2 id="preview-heading">Chi Tiết &amp; Xem Trước</h2>
+        <div id="preview-actions-toolbar" class="panel-actions">
+          <button type="button" id="btn-copy-download-url" class="btn-action btn-compact display-none" title="Sao chép liên kết tải về">Sao chép link</button>
+          <button type="button" id="btn-direct-download" class="btn-action btn-primary btn-compact display-none" title="Tải tập tin về máy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Tải xuống</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="file-details-container">
+        <div id="empty-selection-placeholder" class="state-message-box">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <p><strong>Chưa chọn tập tin nào</strong></p>
+          <p>Hãy bấm vào một tập tin bất kỳ trong cây thư mục phía trên để xem thông tin chi tiết và nội dung xem trước.</p>
         </div>
 
-        <div id="file-details-container" class="details-container">
-          <div id="empty-selection-placeholder" class="state-message-box">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            <p><strong>Chưa chọn tập tin nào</strong></p>
-            <p>Hãy bấm vào một tập tin bất kỳ trong cây thư mục bên trái để xem thông tin chi tiết và nội dung xem trước.</p>
+        <div id="active-file-content-area" class="file-active-column display-none">
+          <!-- Bảng thông tin tập tin -->
+          <div id="file-meta-panel" class="file-meta-grid">
+            <div class="meta-row">
+              <span class="meta-label">Tên tập tin:</span>
+              <span id="meta-file-name" class="meta-value text-bold">-</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Kích thước:</span>
+              <span id="meta-file-size" class="meta-value">-</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Đường dẫn đầy đủ:</span>
+              <span id="meta-file-path" class="meta-value">-</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Loại:</span>
+              <span id="meta-file-type" class="meta-value">-</span>
+            </div>
           </div>
 
-          <div id="active-file-content-area" class="file-active-column display-none">
-            <!-- Bảng thông tin tập tin -->
-            <div id="file-meta-panel" class="file-meta-grid">
-              <div class="meta-row">
-                <span class="meta-label">Tên tập tin:</span>
-                <span id="meta-file-name" class="meta-value text-bold">-</span>
-              </div>
-              <div class="meta-row">
-                <span class="meta-label">Kích thước:</span>
-                <span id="meta-file-size" class="meta-value">-</span>
-              </div>
-              <div class="meta-row">
-                <span class="meta-label">Đường dẫn đầy đủ:</span>
-                <span id="meta-file-path" class="meta-value">-</span>
-              </div>
-              <div class="meta-row">
-                <span class="meta-label">Loại tập tin:</span>
-                <span id="meta-file-type" class="meta-value">-</span>
-              </div>
+          <!-- Các liên kết thao tác (Đã loại bỏ nút Tải trực tiếp trùng lặp) -->
+          <div id="file-external-links-row" class="file-actions-row">
+            <a id="link-github-repo" href="#" target="_blank" rel="noopener noreferrer" class="btn-action btn-compact">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Mở trên GitHub</span>
+            </a>
+
+            <button type="button" id="btn-copy-content" class="btn-action btn-compact" title="Sao chép nội dung văn bản">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+              </svg>
+              <span>Sao chép nội dung</span>
+            </button>
+          </div>
+
+          <!-- Khung hiển thị nội dung xem trước: Tiêu đề chỉ hiển thị tên file -->
+          <div id="preview-box-container" class="preview-box-wrapper">
+            <div id="preview-box-title-bar" class="preview-box-header">
+              <span id="preview-box-title" class="preview-box-title-text">-</span>
+              <span id="preview-box-type-badge" class="badge-status">Văn bản</span>
             </div>
-
-            <!-- Các liên kết thao tác -->
-            <div id="file-external-links-row" class="file-actions-row">
-              <a id="link-github-repo" href="#" target="_blank" rel="noopener noreferrer" class="btn-action btn-compact">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-                <span>Mở trên GitHub</span>
-              </a>
-
-              <a id="link-raw-download" href="#" target="_blank" rel="noopener noreferrer" class="btn-action btn-compact">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Tải trực tiếp</span>
-              </a>
-
-              <button type="button" id="btn-copy-content" class="btn-action btn-compact" title="Sao chép nội dung văn bản">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-                </svg>
-                <span>Sao chép nội dung</span>
-              </button>
-            </div>
-
-            <!-- Khung hiển thị nội dung xem trước -->
-            <div id="preview-box-container" class="preview-box-wrapper">
-              <div id="preview-box-title-bar" class="preview-box-header">
-                <span id="preview-box-title">Nội dung xem trước</span>
-                <span id="preview-box-type-badge" class="badge-status">Văn bản</span>
+            <div id="preview-content-display">
+              <pre id="preview-code-text" class="preview-code-content">Đang nạp nội dung...</pre>
+              <div id="preview-image-wrapper" class="preview-image-content display-none">
+                <img id="preview-img-element" class="preview-image-tag" src="" alt="Xem trước hình ảnh" referrerpolicy="no-referrer">
               </div>
-              <div id="preview-content-display">
-                <pre id="preview-code-text" class="preview-code-content">Đang nạp nội dung...</pre>
-                <div id="preview-image-wrapper" class="preview-image-content display-none">
-                  <img id="preview-img-element" class="preview-image-tag" src="" alt="Xem trước hình ảnh" referrerpolicy="no-referrer">
+              <div id="preview-pdf-wrapper" class="preview-pdf-content display-none">
+                <div id="pdf-viewer-toolbar" class="pdf-toolbar">
+                  <div id="pdf-pagination-group" class="pdf-toolbar-group">
+                    <button type="button" id="btn-pdf-prev" class="btn-action btn-compact" title="Trang trước">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                      <span>Trước</span>
+                    </button>
+                    <span class="pdf-page-indicator">
+                      Trang <input type="number" id="input-pdf-page" class="pdf-page-input" value="1" min="1" max="1" aria-label="Số trang PDF" title="Gõ số trang và nhấn Enter"> / <span id="pdf-total-pages">1</span>
+                    </span>
+                    <button type="button" id="btn-pdf-next" class="btn-action btn-compact" title="Trang sau">
+                      <span>Sau</span>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div id="pdf-zoom-group" class="pdf-toolbar-group">
+                    <button type="button" id="btn-pdf-zoom-out" class="btn-action btn-compact" title="Thu nhỏ">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                      </svg>
+                    </button>
+                    <span id="pdf-zoom-percent" class="pdf-zoom-text">100%</span>
+                    <button type="button" id="btn-pdf-zoom-in" class="btn-action btn-compact" title="Phóng to">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="11" y1="8" x2="11" y2="14"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div id="pdf-fit-group" class="pdf-toolbar-group">
+                    <button type="button" id="btn-pdf-fit-width" class="btn-action btn-compact" title="Vừa chiều rộng khung nhìn">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="8 3 4 3 4 7"></polyline>
+                        <polyline points="4 17 4 21 8 21"></polyline>
+                        <polyline points="16 3 20 3 20 7"></polyline>
+                        <polyline points="20 17 20 21 16 21"></polyline>
+                      </svg>
+                      <span>Vừa chiều rộng</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="pdf-canvas-container" class="pdf-canvas-viewport">
+                  <div id="pdf-loading-indicator" class="pdf-status-msg">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                    </svg>
+                    <p id="pdf-loading-text">Đang nạp và hiển thị tài liệu PDF...</p>
+                  </div>
+                  <div id="pdf-error-container" class="pdf-status-msg state-error display-none"></div>
+                  <canvas id="pdf-render-canvas" class="pdf-canvas-page display-none"></canvas>
                 </div>
               </div>
             </div>
@@ -748,11 +921,9 @@
         </div>
       </div>
     </section>
-
-
   </main>
 
-  <!-- Thông báo Toast nổi -->
+  <!-- Thông báo Toast -->
   <div id="toast-notification" class="notification-toast" role="alert"></div>
 
   <!-- JavaScript xử lý toàn bộ logic ứng dụng -->
@@ -782,7 +953,7 @@
           .replace(/'/g, '&#039;');
       }
 
-      // Xác định loại tập tin theo phần mở rộng
+      // Xác định loại tập tin theo phần mở rộng (Loại bỏ chữ 'Tài liệu...')
       function getFileTypeInfo(fileName) {
         const ext = (fileName.split('.').pop() || '').toLowerCase();
         const codeExts = ['js', 'jsx', 'ts', 'tsx', 'html', 'htm', 'css', 'scss', 'json', 'xml', 'svg', 'md', 'py', 'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'sh', 'yaml', 'yml', 'sql', 'txt', 'log', 'ini', 'env'];
@@ -791,12 +962,13 @@
         const videoExts = ['mp4', 'webm', 'mov', 'mkv'];
         const archiveExts = ['zip', 'rar', 'tar', 'gz', '7z'];
 
-        if (imageExts.includes(ext)) return { category: 'image', ext: ext, label: 'Hình ảnh (' + ext.toUpperCase() + ')' };
-        if (codeExts.includes(ext)) return { category: 'code', ext: ext, label: 'Mã nguồn / Văn bản (' + ext.toUpperCase() + ')' };
+        if (ext === 'pdf') return { category: 'pdf', ext: 'pdf', label: 'PDF' };
+        if (imageExts.includes(ext)) return { category: 'image', ext: ext, label: 'Ảnh (' + ext.toUpperCase() + ')' };
+        if (codeExts.includes(ext)) return { category: 'code', ext: ext, label: 'Văn bản (' + ext.toUpperCase() + ')' };
         if (audioExts.includes(ext)) return { category: 'audio', ext: ext, label: 'Âm thanh (' + ext.toUpperCase() + ')' };
         if (videoExts.includes(ext)) return { category: 'video', ext: ext, label: 'Video (' + ext.toUpperCase() + ')' };
-        if (archiveExts.includes(ext)) return { category: 'archive', ext: ext, label: 'Tập tin nén (' + ext.toUpperCase() + ')' };
-        return { category: 'binary', ext: ext, label: 'Tập tin nhị phân (' + (ext ? ext.toUpperCase() : 'Không rõ') + ')' };
+        if (archiveExts.includes(ext)) return { category: 'archive', ext: ext, label: 'Nén (' + ext.toUpperCase() + ')' };
+        return { category: 'binary', ext: ext, label: 'Nhị phân (' + (ext ? ext.toUpperCase() : 'Không rõ') + ')' };
       }
 
       // Tạo SVG Icon tương ứng cho thư mục và loại tập tin
@@ -807,6 +979,16 @@
           </svg>`;
         }
         const fileInfo = getFileTypeInfo(fileName || '');
+        if (fileInfo.category === 'pdf') {
+          return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M9 13v4"></path>
+            <path d="M9 13h2a1.5 1.5 0 0 0 0-3H9"></path>
+            <path d="M14 10v7"></path>
+            <path d="M14 10h1.5a2.5 2.5 0 0 1 0 5H14"></path>
+          </svg>`;
+        }
         if (fileInfo.category === 'image') {
           return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
@@ -856,13 +1038,26 @@
       const metaFilePath = document.getElementById('meta-file-path');
       const metaFileType = document.getElementById('meta-file-type');
       const linkGithubRepo = document.getElementById('link-github-repo');
-      const linkRawDownload = document.getElementById('link-raw-download');
       const btnCopyContent = document.getElementById('btn-copy-content');
       const btnCopyDownloadUrl = document.getElementById('btn-copy-download-url');
       const btnDirectDownload = document.getElementById('btn-direct-download');
       const previewCodeText = document.getElementById('preview-code-text');
       const previewImageWrapper = document.getElementById('preview-image-wrapper');
       const previewImgElement = document.getElementById('preview-img-element');
+      const previewPdfWrapper = document.getElementById('preview-pdf-wrapper');
+      const btnPdfPrev = document.getElementById('btn-pdf-prev');
+      const btnPdfNext = document.getElementById('btn-pdf-next');
+      const inputPdfPage = document.getElementById('input-pdf-page');
+      const pdfTotalPages = document.getElementById('pdf-total-pages');
+      const btnPdfZoomOut = document.getElementById('btn-pdf-zoom-out');
+      const btnPdfZoomIn = document.getElementById('btn-pdf-zoom-in');
+      const btnPdfFitWidth = document.getElementById('btn-pdf-fit-width');
+      const pdfZoomPercent = document.getElementById('pdf-zoom-percent');
+      const pdfCanvasContainer = document.getElementById('pdf-canvas-container');
+      const pdfLoadingIndicator = document.getElementById('pdf-loading-indicator');
+      const pdfLoadingText = document.getElementById('pdf-loading-text');
+      const pdfErrorContainer = document.getElementById('pdf-error-container');
+      const pdfRenderCanvas = document.getElementById('pdf-render-canvas');
       const previewBoxTitle = document.getElementById('preview-box-title');
       const previewBoxTypeBadge = document.getElementById('preview-box-type-badge');
 
@@ -873,7 +1068,57 @@
       let currentLoadedFileItem = null;
       let totalLoadedItems = 0;
 
-      // Hiển thị Toast
+      // Trạng thái trình đọc PDF
+      let currentPdfDoc = null;
+      let currentPdfPageNum = 1;
+      let currentPdfScale = 1.0;
+      let currentPdfRenderTask = null;
+      let isPdfRendering = false;
+
+      // Nạp script động
+      function loadDynamicScript(src) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error(`Không thể nạp: ${src}`));
+          document.head.appendChild(script);
+        });
+      }
+
+      // Đảm bảo thư viện PDF.js sẵn sàng (có cơ chế dự phòng offline qua thư mục js/ cục bộ)
+      async function ensurePdfJsLoaded() {
+        const globalScope = window;
+        if (globalScope.pdfjsLib) {
+          return globalScope.pdfjsLib;
+        }
+
+        // 1. Thử nạp từ CDN
+        try {
+          await loadDynamicScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+          if (globalScope.pdfjsLib) {
+            globalScope.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            return globalScope.pdfjsLib;
+          }
+        } catch (cdnError) {
+          console.warn('Không thể nạp PDF.js từ CDN, chuyển sang tập tin cục bộ /js/pdf.min.js', cdnError);
+        }
+
+        // 2. Chuyển sang nạp file cục bộ trong thư mục js/
+        try {
+          await loadDynamicScript('/js/pdf.min.js');
+          if (globalScope.pdfjsLib) {
+            globalScope.pdfjsLib.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
+            return globalScope.pdfjsLib;
+          }
+        } catch (localError) {
+          throw new Error('Không thể nạp thư viện xem PDF (cả CDN và tập tin cục bộ đều không tải được).');
+        }
+
+        throw new Error('Thư viện PDF.js chưa sẵn sàng.');
+      }
+
+      // Hiển thị thông báo Toast
       function showToast(message) {
         if (!toastNotification) return;
         toastNotification.textContent = message;
@@ -883,7 +1128,7 @@
         }, 3000);
       }
 
-      // Gọi GitHub REST API
+      // Gọi GitHub REST API v3
       async function fetchGitHubContents(owner, repo, path) {
         const cleanPath = (path || '').trim().replace(/^\/+|\/+$/g, '');
         const encodedPath = cleanPath.split('/').filter(Boolean).map(encodeURIComponent).join('/');
@@ -896,7 +1141,7 @@
           if (response.status === 404) {
             throw new Error(`Không tìm thấy kho lưu trữ hoặc đường dẫn "${cleanPath || 'gốc'}" (Mã lỗi 404).`);
           } else if (response.status === 403) {
-            throw new Error(`Đã vượt quá giới hạn lượt truy cập tạm thời của GitHub API (Mã lỗi 403). Vui lòng thử lại sau.`);
+            throw new Error(`Đã vượt quá giới hạn truy cập tạm thời của GitHub API (Mã lỗi 403). Vui lòng thử lại sau.`);
           } else {
             throw new Error(`GitHub API phản hồi mã lỗi HTTP ${response.status}: ${response.statusText}`);
           }
@@ -914,7 +1159,7 @@
         });
       }
 
-      // Cập nhật đường dẫn Breadcrumb
+      // Cập nhật Breadcrumb
       function updateBreadcrumb(path) {
         const clean = (path || '').trim().replace(/^\/+|\/+$/g, '');
         if (breadcrumbCurrentText) {
@@ -922,7 +1167,7 @@
         }
       }
 
-      // Tạo một phần tử Node trong cây
+      // Tạo một phần tử Node trong cây thư mục (Hỗ trợ hiển thị trên thiết bị nhỏ)
       function createTreeNodeElement(item) {
         const li = document.createElement('li');
         li.className = 'tree-node ' + (item.type === 'dir' ? 'folder-node' : 'file-node');
@@ -1019,184 +1264,231 @@
         return li;
       }
 
-      // Nạp thông tin chi tiết và nội dung xem trước của tập tin
-      async function loadFileDetails(item) {
-        currentLoadedFileItem = item;
-        emptySelectionPlaceholder.classList.add('display-none');
-        activeFileContentArea.classList.remove('display-none');
+      // Hiển thị trang PDF lên thẻ Canvas
+      async function renderPdfPage(pageNum) {
+        if (!currentPdfDoc) return;
 
-        metaFileName.textContent = item.name || 'Không có tên';
-        metaFileSize.textContent = formatBytes(item.size);
-        metaFilePath.textContent = item.path || '-';
-
-        const fileTypeInfo = getFileTypeInfo(item.name || '');
-        metaFileType.textContent = fileTypeInfo.label;
-
-        if (linkGithubRepo) {
-          linkGithubRepo.href = item.html_url || '#';
+        if (currentPdfRenderTask) {
+          try {
+            currentPdfRenderTask.cancel();
+          } catch (cancelErr) {
+            // Huỷ an toàn
+          }
+          currentPdfRenderTask = null;
         }
 
-        if (linkRawDownload) {
-          linkRawDownload.href = item.download_url || '#';
+        pdfLoadingIndicator.classList.remove('display-none');
+        if (pdfLoadingText) {
+          pdfLoadingText.textContent = `Đang kết xuất trang ${pageNum} / ${currentPdfDoc.numPages}...`;
         }
-
-        if (item.download_url) {
-          btnCopyDownloadUrl.classList.remove('display-none');
-          btnDirectDownload.classList.remove('display-none');
-        } else {
-          btnCopyDownloadUrl.classList.add('display-none');
-          btnDirectDownload.classList.add('display-none');
-        }
-
-        previewBoxTitle.textContent = `Xem trước: ${item.name}`;
-        previewBoxTypeBadge.textContent = fileTypeInfo.label;
-
-        // Xử lý xem trước hình ảnh
-        if (fileTypeInfo.category === 'image' && item.download_url) {
-          previewCodeText.classList.add('display-none');
-          previewImageWrapper.classList.remove('display-none');
-          previewImgElement.src = item.download_url;
-          currentLoadedFileRawText = `[Tập tin hình ảnh: ${item.name} - ${item.download_url}]`;
-          return;
-        }
-
-        // Xử lý xem trước mã nguồn / văn bản
-        previewImageWrapper.classList.add('display-none');
-        previewCodeText.classList.remove('display-none');
-
-        if (!item.download_url) {
-          previewCodeText.textContent = 'Không có đường dẫn tải trực tiếp nội dung cho tập tin này.';
-          currentLoadedFileRawText = '';
-          return;
-        }
-
-        // Nếu tập tin quá lớn (> 2MB)
-        if (item.size > 2 * 1024 * 1024) {
-          previewCodeText.textContent = `Tập tin có dung lượng lớn (${formatBytes(item.size)}). Hãy bấm nút "Tải trực tiếp" hoặc "Mở trên GitHub" để xem.`;
-          currentLoadedFileRawText = '';
-          return;
-        }
-
-        previewCodeText.textContent = 'Đang tải nội dung văn bản từ GitHub...';
+        pdfRenderCanvas.classList.add('display-none');
+        pdfErrorContainer.classList.add('display-none');
 
         try {
-          const res = await fetch(item.download_url);
-          if (!res.ok) {
-            throw new Error(`Không thể nạp nội dung (HTTP ${res.status})`);
+          isPdfRendering = true;
+          const page = await currentPdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale: currentPdfScale });
+
+          // Hỗ trợ hiển thị sắc nét trên màn hình Retina / High DPI
+          const pixelRatio = window.devicePixelRatio || 1;
+          pdfRenderCanvas.width = Math.floor(viewport.width * pixelRatio);
+          pdfRenderCanvas.height = Math.floor(viewport.height * pixelRatio);
+          pdfRenderCanvas.style.width = Math.floor(viewport.width) + 'px';
+          pdfRenderCanvas.style.height = Math.floor(viewport.height) + 'px';
+
+          const canvasContext = pdfRenderCanvas.getContext('2d');
+          const transform = pixelRatio !== 1 ? [pixelRatio, 0, 0, pixelRatio, 0, 0] : null;
+
+          const renderContext = {
+            canvasContext: canvasContext,
+            transform: transform,
+            viewport: viewport
+          };
+
+          currentPdfRenderTask = page.render(renderContext);
+          await currentPdfRenderTask.promise;
+          currentPdfRenderTask = null;
+          isPdfRendering = false;
+
+          pdfLoadingIndicator.classList.add('display-none');
+          pdfRenderCanvas.classList.remove('display-none');
+
+          // Cập nhật thanh điều hướng trang PDF
+          currentPdfPageNum = pageNum;
+          if (inputPdfPage) {
+            inputPdfPage.value = pageNum;
+            inputPdfPage.min = '1';
+            inputPdfPage.max = String(currentPdfDoc.numPages);
           }
-          const text = await res.text();
-          currentLoadedFileRawText = text;
-          previewCodeText.textContent = text;
-        } catch (fetchErr) {
-          previewCodeText.textContent = `Lỗi khi tải nội dung tập tin: ${fetchErr.message}`;
-          currentLoadedFileRawText = '';
+          if (pdfTotalPages) pdfTotalPages.textContent = currentPdfDoc.numPages;
+          if (pdfZoomPercent) pdfZoomPercent.textContent = Math.round(currentPdfScale * 100) + '%';
+
+          if (btnPdfPrev) btnPdfPrev.disabled = (pageNum <= 1);
+          if (btnPdfNext) btnPdfNext.disabled = (pageNum >= currentPdfDoc.numPages);
+        } catch (renderError) {
+          isPdfRendering = false;
+          if (renderError && renderError.name === 'RenderingCancelledException') {
+            return;
+          }
+          pdfLoadingIndicator.classList.add('display-none');
+          pdfErrorContainer.classList.remove('display-none');
+          pdfErrorContainer.textContent = `Lỗi hiển thị trang PDF: ${renderError.message}`;
         }
       }
 
-      // Cập nhật số lượng mục
-      function updateItemCount() {
-        if (statusItemCount) {
-          statusItemCount.textContent = `${new Intl.NumberFormat('vi-VN').format(totalLoadedItems)} mục`;
+      // Căn tỷ lệ PDF vừa với khung nhìn
+      async function fitPdfToCurrentWidth() {
+        if (!currentPdfDoc) return;
+        try {
+          const page = await currentPdfDoc.getPage(currentPdfPageNum);
+          const unscaledViewport = page.getViewport({ scale: 1.0 });
+          const availableWidth = (pdfCanvasContainer.clientWidth || 600) - 24;
+          const targetWidth = Math.max(availableWidth, 240);
+          currentPdfScale = Math.min(Math.max(targetWidth / unscaledViewport.width, 0.4), 3.0);
+          await renderPdfPage(currentPdfPageNum);
+        } catch (fitErr) {
+          console.error('Lỗi tính toán kích thước vừa chiều rộng:', fitErr);
         }
       }
 
-      // Tải cây thư mục gốc
+      // Nạp dữ liệu tài liệu PDF từ đường dẫn URL GitHub
+      async function loadPdfDocument(downloadUrl, fileName) {
+        if (currentPdfDoc) {
+          try {
+            currentPdfDoc.destroy();
+          } catch (destrErr) {
+            // Dọn dẹp an toàn
+          }
+          currentPdfDoc = null;
+        }
+
+        pdfLoadingIndicator.classList.remove('display-none');
+        if (pdfLoadingText) {
+          pdfLoadingText.textContent = `Đang nạp dữ liệu PDF (${escapeHtml(fileName)})...`;
+        }
+        pdfErrorContainer.classList.add('display-none');
+        pdfRenderCanvas.classList.add('display-none');
+
+        try {
+          const pdfjs = await ensurePdfJsLoaded();
+
+          // Nạp dữ liệu dưới dạng ArrayBuffer qua JavaScript
+          const response = await fetch(downloadUrl);
+          if (!response.ok) {
+            throw new Error(`Không thể nạp dữ liệu PDF từ máy chủ (Mã HTTP ${response.status})`);
+          }
+          const arrayBuffer = await response.arrayBuffer();
+
+          const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+          currentPdfDoc = await loadingTask.promise;
+          currentPdfPageNum = 1;
+
+          // Tự động tính tỷ lệ để căn vừa bề rộng
+          await fitPdfToCurrentWidth();
+        } catch (pdfErr) {
+          pdfLoadingIndicator.classList.add('display-none');
+          pdfErrorContainer.classList.remove('display-none');
+          pdfErrorContainer.innerHTML = `
+            <p><strong>Không thể hiển thị xem trước PDF</strong></p>
+            <p>${escapeHtml(pdfErr.message)}</p>
+            <p>Bạn có thể bấm nút <strong>Tải xuống</strong> ở góc trên để mở và xem tài liệu trên thiết bị.</p>
+          `;
+        }
+      }
+
+      // Nạp thư mục gốc
       async function loadRepositoryRoot() {
         const owner = inputOwner.value.trim();
         const repo = inputRepo.value.trim();
         const path = inputPath.value.trim();
 
         if (!owner || !repo) {
-          showToast('Vui lòng nhập đầy đủ Chủ sở hữu (Owner) và Tên kho lưu trữ (Repo)!');
+          treeStatusMessage.classList.remove('display-none');
+          treeStatusMessage.innerHTML = `<div class="state-error">Vui lòng nhập đầy đủ Tài khoản/Tổ chức (Owner) và Tên kho (Repo).</div>`;
+          rootTreeList.classList.add('display-none');
           return;
         }
 
-        updateBreadcrumb(path);
-        rootTreeList.classList.add('display-none');
-        rootTreeList.innerHTML = '';
         treeStatusMessage.classList.remove('display-none');
         treeStatusMessage.innerHTML = `
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          <p>Đang tải danh sách tập tin từ <strong>${escapeHtml(owner)}/${escapeHtml(repo)}</strong>...</p>
+          <p>Đang tải dữ liệu từ <strong>${escapeHtml(owner)}/${escapeHtml(repo)}</strong>...</p>
         `;
-
+        rootTreeList.classList.add('display-none');
+        rootTreeList.innerHTML = '';
         totalLoadedItems = 0;
+        updateBreadcrumb(path);
 
         try {
           const contents = await fetchGitHubContents(owner, repo, path);
-
-          // Nếu trả về là 1 tập tin duy nhất
-          if (!Array.isArray(contents) && contents.type === 'file') {
-            treeStatusMessage.classList.add('display-none');
-            rootTreeList.classList.remove('display-none');
-            rootTreeList.appendChild(createTreeNodeElement(contents));
-            totalLoadedItems = 1;
-            updateItemCount();
-            loadFileDetails(contents);
-            showToast('Đã nạp thông tin tập tin!');
-            return;
-          }
-
-          if (!Array.isArray(contents) || contents.length === 0) {
-            treeStatusMessage.classList.remove('display-none');
-            treeStatusMessage.innerHTML = `<p>Thư mục này hiện không có tập tin nào.</p>`;
-            updateItemCount();
-            return;
-          }
-
-          sortTreeItems(contents);
-          contents.forEach((item) => {
-            rootTreeList.appendChild(createTreeNodeElement(item));
-            totalLoadedItems++;
-          });
-
           treeStatusMessage.classList.add('display-none');
           rootTreeList.classList.remove('display-none');
+
+          if (Array.isArray(contents) && contents.length > 0) {
+            sortTreeItems(contents);
+            contents.forEach((item) => {
+              rootTreeList.appendChild(createTreeNodeElement(item));
+              totalLoadedItems++;
+            });
+          } else if (!Array.isArray(contents) && contents.type === 'file') {
+            rootTreeList.appendChild(createTreeNodeElement(contents));
+            totalLoadedItems = 1;
+            loadFileDetails(contents);
+          } else {
+            rootTreeList.innerHTML = '<li class="file-size-tag"><em>(Kho lưu trữ hoặc thư mục này đang trống)</em></li>';
+          }
           updateItemCount();
-          showToast(`Đã nạp thành công ${contents.length} mục trong thư mục!`);
         } catch (error) {
           treeStatusMessage.classList.remove('display-none');
           treeStatusMessage.innerHTML = `
             <div class="state-error">
-              <strong>Lỗi tải kho lưu trữ:</strong><br>
-              ${escapeHtml(error.message)}
+              <p><strong>Lỗi tải dữ liệu GitHub:</strong></p>
+              <p>${escapeHtml(error.message)}</p>
             </div>
           `;
-          updateItemCount();
         }
       }
 
-      // Lọc danh sách theo từ khoá tìm kiếm
+      // Cập nhật số lượng mục
+      function updateItemCount() {
+        if (statusItemCount) {
+          const formattedCount = new Intl.NumberFormat('vi-VN').format(totalLoadedItems);
+          statusItemCount.textContent = `${formattedCount} mục đã nạp`;
+        }
+      }
+
+      // Lọc danh sách trong cây thư mục
       function filterTreeNodes(keyword) {
-        const kw = (keyword || '').trim().toLowerCase();
+        const cleanKeyword = (keyword || '').trim().toLowerCase();
         const allNodes = rootTreeList.querySelectorAll('.tree-node');
 
-        if (!kw) {
-          allNodes.forEach(node => {
+        if (!cleanKeyword) {
+          allNodes.forEach((node) => {
             node.classList.remove('display-none');
           });
           return;
         }
 
-        allNodes.forEach(node => {
-          const nodeName = node.getAttribute('data-name') || '';
-          if (nodeName.includes(kw)) {
+        allNodes.forEach((node) => {
+          const name = node.getAttribute('data-name') || '';
+          if (name.includes(cleanKeyword)) {
             node.classList.remove('display-none');
-            // Mở tất cả cha của node này
-            let parent = node.parentElement;
-            while (parent && parent !== rootTreeList) {
-              if (parent.classList.contains('tree-sub-list')) {
-                parent.parentElement.classList.add('open');
-              }
-              parent = parent.parentElement;
+            // Mở tất cả các thư mục cha để người dùng nhìn thấy kết quả
+            let parentNode = node.parentElement ? node.parentElement.closest('.tree-node') : null;
+            while (parentNode) {
+              parentNode.classList.remove('display-none');
+              parentNode.classList.add('open');
+              parentNode = parentNode.parentElement ? parentNode.parentElement.closest('.tree-node') : null;
             }
           } else {
-            // Nếu là folder có con chứa keyword
-            const hasMatchingChild = node.querySelector(`[data-name*="${kw}"]`);
+            // Nếu là folder có chứa con khớp từ khoá thì vẫn hiển thị
+            const hasMatchingChild = node.querySelector(`[data-name*="${cleanKeyword}"]`);
             if (hasMatchingChild) {
               node.classList.remove('display-none');
+              node.classList.add('open');
             } else {
               node.classList.add('display-none');
             }
@@ -1204,131 +1496,278 @@
         });
       }
 
-      // Đăng ký các sự kiện tương tác
-      function initializeEvents() {
-        // Nút Duyệt kho
-        if (btnFetchRepo) {
-          btnFetchRepo.addEventListener('click', loadRepositoryRoot);
+      // Tải và hiển thị chi tiết tập tin khi chọn từ cây thư mục
+      async function loadFileDetails(item) {
+        currentLoadedFileItem = item;
+        emptySelectionPlaceholder.classList.add('display-none');
+        activeFileContentArea.classList.remove('display-none');
+
+        // Bỏ tiền tố "Xem trước: " -> Chỉ để lại đúng tên file
+        previewBoxTitle.textContent = item.name || '-';
+        previewBoxTitle.title = item.name || '';
+
+        metaFileName.textContent = item.name || '-';
+        metaFileSize.textContent = formatBytes(item.size);
+        metaFilePath.textContent = item.path || '-';
+
+        const fileTypeInfo = getFileTypeInfo(item.name);
+        metaFileType.textContent = fileTypeInfo.label;
+        previewBoxTypeBadge.textContent = fileTypeInfo.label;
+
+        // Cập nhật các liên kết GitHub & Nút tải xuống duy nhất
+        if (item.html_url) {
+          linkGithubRepo.href = item.html_url;
+          linkGithubRepo.classList.remove('display-none');
+        } else {
+          linkGithubRepo.classList.add('display-none');
         }
 
-        // Phím Enter trên các ô nhập liệu
-        [inputOwner, inputRepo, inputPath].forEach(inp => {
-          if (inp) {
-            inp.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                loadRepositoryRoot();
+        if (item.download_url) {
+          btnCopyDownloadUrl.classList.remove('display-none');
+          btnDirectDownload.classList.remove('display-none');
+          btnDirectDownload.onclick = () => {
+            const link = document.createElement('a');
+            link.href = item.download_url;
+            link.download = item.name || 'download';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Đang bắt đầu tải tập tin xuống...');
+          };
+        } else {
+          btnCopyDownloadUrl.classList.add('display-none');
+          btnDirectDownload.classList.add('display-none');
+        }
+
+        // Đặt lại các khung hiển thị xem trước
+        previewCodeText.classList.add('display-none');
+        previewImageWrapper.classList.add('display-none');
+        previewPdfWrapper.classList.add('display-none');
+        btnCopyContent.classList.add('display-none');
+        currentLoadedFileRawText = '';
+
+        // Phân loại xử lý xem trước
+        if (fileTypeInfo.category === 'pdf') {
+          // 1. TÀI LIỆU PDF
+          previewPdfWrapper.classList.remove('display-none');
+          if (item.download_url) {
+            await loadPdfDocument(item.download_url, item.name);
+          } else {
+            pdfLoadingIndicator.classList.add('display-none');
+            pdfErrorContainer.classList.remove('display-none');
+            pdfErrorContainer.textContent = 'Không có liên kết tải trực tiếp để xem trước PDF.';
+          }
+        } else if (fileTypeInfo.category === 'image') {
+          // 2. HÌNH ẢNH
+          previewImageWrapper.classList.remove('display-none');
+          if (item.download_url) {
+            previewImgElement.src = item.download_url;
+          } else {
+            previewImgElement.src = '';
+          }
+        } else if (fileTypeInfo.category === 'code') {
+          // 3. MÃ NGUỒN VÀ VĂN BẢN
+          previewCodeText.classList.remove('display-none');
+          btnCopyContent.classList.remove('display-none');
+          previewCodeText.textContent = 'Đang tải nội dung văn bản...';
+
+          try {
+            if (item.download_url) {
+              const res = await fetch(item.download_url);
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const textContent = await res.text();
+              currentLoadedFileRawText = textContent;
+              previewCodeText.textContent = textContent;
+            } else if (item.content && item.encoding === 'base64') {
+              // Giải mã Base64 UTF-8 an toàn cho tiếng Việt
+              const binaryString = atob(item.content.replace(/\s/g, ''));
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
               }
-            });
+              const decodedText = new TextDecoder('utf-8').decode(bytes);
+              currentLoadedFileRawText = decodedText;
+              previewCodeText.textContent = decodedText;
+            } else {
+              previewCodeText.textContent = '(Không tìm thấy nội dung văn bản khả dụng)';
+            }
+          } catch (textErr) {
+            previewCodeText.textContent = `Lỗi tải nội dung: ${textErr.message}`;
+          }
+        } else {
+          // 4. CÁC TẬP TIN NHỊ PHÂN KHÁC
+          previewCodeText.classList.remove('display-none');
+          previewCodeText.textContent = `Tập tin này thuộc định dạng "${fileTypeInfo.label}".\n\nBạn có thể bấm nút "Tải xuống" ở trên để lưu và mở tập tin bằng ứng dụng chuyên dụng trên thiết bị.`;
+        }
+      }
+
+      // Khởi tạo và gắn kết các sự kiện tương tác
+      function initializeEvents() {
+        // Nút Duyệt kho
+        btnFetchRepo.addEventListener('click', () => {
+          loadRepositoryRoot();
+        });
+
+        // Nhấn Enter trong các ô nhập cấu hình
+        [inputOwner, inputRepo, inputPath].forEach((input) => {
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              loadRepositoryRoot();
+            }
+          });
+        });
+
+        // Breadcrumb về gốc
+        breadcrumbRoot.addEventListener('click', () => {
+          inputPath.value = '';
+          loadRepositoryRoot();
+        });
+
+        // Lọc tìm kiếm nhanh
+        inputSearchFilter.addEventListener('input', (e) => {
+          filterTreeNodes(e.target.value);
+        });
+
+        btnClearSearch.addEventListener('click', () => {
+          inputSearchFilter.value = '';
+          filterTreeNodes('');
+        });
+
+        // Mở tất cả thư mục
+        btnExpandAll.addEventListener('click', () => {
+          const allFolderNodes = rootTreeList.querySelectorAll('.folder-node');
+          allFolderNodes.forEach((node) => {
+            node.classList.add('open');
+          });
+        });
+
+        // Thu gọn tất cả thư mục
+        btnCollapseAll.addEventListener('click', () => {
+          const allFolderNodes = rootTreeList.querySelectorAll('.folder-node');
+          allFolderNodes.forEach((node) => {
+            node.classList.remove('open');
+          });
+        });
+
+        // Làm mới dữ liệu cây thư mục
+        btnRefreshTree.addEventListener('click', () => {
+          loadRepositoryRoot();
+          showToast('Đã làm mới dữ liệu cây thư mục');
+        });
+
+        // Sao chép nội dung văn bản
+        btnCopyContent.addEventListener('click', async () => {
+          if (!currentLoadedFileRawText) {
+            showToast('Không có nội dung văn bản để sao chép');
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(currentLoadedFileRawText);
+            showToast('Đã sao chép nội dung vào bộ nhớ tạm!');
+          } catch (clipErr) {
+            showToast('Không thể tự động sao chép, vui lòng chọn thủ công');
           }
         });
 
-        // Tìm kiếm / lọc
-        if (inputSearchFilter) {
-          inputSearchFilter.addEventListener('input', (e) => {
-            filterTreeNodes(e.target.value);
-          });
+        // Sao chép liên kết tải về
+        btnCopyDownloadUrl.addEventListener('click', async () => {
+          if (currentLoadedFileItem && currentLoadedFileItem.download_url) {
+            try {
+              await navigator.clipboard.writeText(currentLoadedFileItem.download_url);
+              showToast('Đã sao chép link tải về vào bộ nhớ tạm!');
+            } catch (err) {
+              showToast('Lỗi khi sao chép link');
+            }
+          }
+        });
+
+        // Thanh công cụ PDF
+        function jumpToPdfPage() {
+          if (!currentPdfDoc || isPdfRendering) return;
+          let targetPage = parseInt(inputPdfPage.value, 10);
+          if (isNaN(targetPage)) {
+            inputPdfPage.value = currentPdfPageNum;
+            return;
+          }
+          if (targetPage < 1) targetPage = 1;
+          if (targetPage > currentPdfDoc.numPages) targetPage = currentPdfDoc.numPages;
+          if (targetPage !== currentPdfPageNum) {
+            renderPdfPage(targetPage);
+          } else {
+            inputPdfPage.value = currentPdfPageNum;
+          }
         }
 
-        if (btnClearSearch) {
-          btnClearSearch.addEventListener('click', () => {
-            if (inputSearchFilter) {
-              inputSearchFilter.value = '';
-              filterTreeNodes('');
+        if (inputPdfPage) {
+          inputPdfPage.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              jumpToPdfPage();
+              inputPdfPage.blur();
             }
           });
-        }
 
-        // Breadcrumb về gốc
-        if (breadcrumbRoot) {
-          breadcrumbRoot.addEventListener('click', () => {
-            inputPath.value = '';
-            loadRepositoryRoot();
+          inputPdfPage.addEventListener('change', () => {
+            jumpToPdfPage();
           });
         }
 
-        // Mở rộng tất cả
-        if (btnExpandAll) {
-          btnExpandAll.addEventListener('click', () => {
-            const allFolders = rootTreeList.querySelectorAll('.folder-node');
-            allFolders.forEach(folder => {
-              folder.classList.add('open');
-            });
-            showToast('Đã mở rộng tất cả các thư mục trong cây!');
-          });
-        }
+        btnPdfPrev.addEventListener('click', () => {
+          if (currentPdfDoc && currentPdfPageNum > 1 && !isPdfRendering) {
+            renderPdfPage(currentPdfPageNum - 1);
+          }
+        });
 
-        // Thu gọn tất cả
-        if (btnCollapseAll) {
-          btnCollapseAll.addEventListener('click', () => {
-            const allFolders = rootTreeList.querySelectorAll('.folder-node');
-            allFolders.forEach(folder => {
-              folder.classList.remove('open');
-            });
-            showToast('Đã thu gọn tất cả thư mục!');
-          });
-        }
+        btnPdfNext.addEventListener('click', () => {
+          if (currentPdfDoc && currentPdfPageNum < currentPdfDoc.numPages && !isPdfRendering) {
+            renderPdfPage(currentPdfPageNum + 1);
+          }
+        });
 
-        // Làm mới cây
-        if (btnRefreshTree) {
-          btnRefreshTree.addEventListener('click', () => {
-            loadRepositoryRoot();
-          });
-        }
+        btnPdfZoomOut.addEventListener('click', () => {
+          if (currentPdfDoc && !isPdfRendering) {
+            currentPdfScale = Math.max(0.4, currentPdfScale - 0.2);
+            renderPdfPage(currentPdfPageNum);
+          }
+        });
 
-        // Sao chép nội dung văn bản
-        if (btnCopyContent) {
-          btnCopyContent.addEventListener('click', () => {
-            if (!currentLoadedFileRawText) {
-              showToast('Không có nội dung văn bản để sao chép.');
-              return;
+        btnPdfZoomIn.addEventListener('click', () => {
+          if (currentPdfDoc && !isPdfRendering) {
+            currentPdfScale = Math.min(3.0, currentPdfScale + 0.2);
+            renderPdfPage(currentPdfPageNum);
+          }
+        });
+
+        btnPdfFitWidth.addEventListener('click', () => {
+          if (currentPdfDoc && !isPdfRendering) {
+            fitPdfToCurrentWidth();
+          }
+        });
+
+        // Tự động điều chỉnh kích thước PDF khi thay đổi kích thước cửa sổ
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            if (currentPdfDoc && !previewPdfWrapper.classList.contains('display-none')) {
+              fitPdfToCurrentWidth();
             }
-            navigator.clipboard.writeText(currentLoadedFileRawText).then(() => {
-              showToast('Đã sao chép nội dung tập tin vào bộ nhớ tạm!');
-            }).catch(() => {
-              showToast('Không thể sao chép tự động.');
-            });
-          });
-        }
+          }, 200);
+        });
 
-        // Sao chép URL tải trực tiếp
-        if (btnCopyDownloadUrl) {
-          btnCopyDownloadUrl.addEventListener('click', () => {
-            if (currentLoadedFileItem && currentLoadedFileItem.download_url) {
-              navigator.clipboard.writeText(currentLoadedFileItem.download_url).then(() => {
-                showToast('Đã sao chép liên kết tải xuống trực tiếp!');
-              });
-            }
-          });
-        }
-
-        // Tải xuống trực tiếp
-        if (btnDirectDownload) {
-          btnDirectDownload.addEventListener('click', () => {
-            if (currentLoadedFileItem && currentLoadedFileItem.download_url) {
-              const a = document.createElement('a');
-              a.href = currentLoadedFileItem.download_url;
-              a.download = currentLoadedFileItem.name || 'download';
-              a.target = '_blank';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              showToast(`Bắt đầu tải xuống: ${currentLoadedFileItem.name}`);
-            }
-          });
-        }
-
+        // Tải dữ liệu ban đầu
+        loadRepositoryRoot();
       }
 
-      // Khởi chạy chương trình
-      window.addEventListener('DOMContentLoaded', () => {
-        try {
-          initializeEvents();
-          loadRepositoryRoot();
-        } catch (initError) {
-          console.error('Lỗi khởi tạo chương trình:', initError);
-        }
-      });
+      // Khởi động ứng dụng khi DOM sẵn sàng
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeEvents);
+      } else {
+        initializeEvents();
+      }
     })();
   </script>
 </body>
