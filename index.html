@@ -576,12 +576,39 @@
       border-color: var(--primary-color);
     }
 
-    .pdf-zoom-text {
+    .pdf-zoom-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.15rem;
       font-size: 1.1rem;
-      min-width: 3.2rem;
-      text-align: center;
-      white-space: nowrap;
+      font-weight: bold;
       color: var(--text-main);
+      padding: 0 0.2rem;
+      white-space: nowrap;
+    }
+
+    .pdf-zoom-input {
+      width: 4rem;
+      padding: 0.2rem 0.25rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--text-main);
+      background-color: var(--bg-surface);
+      -moz-appearance: textfield;
+    }
+
+    .pdf-zoom-input::-webkit-outer-spin-button,
+    .pdf-zoom-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .pdf-zoom-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
     }
 
     .pdf-canvas-viewport {
@@ -916,15 +943,17 @@
                   </div>
 
                   <div id="pdf-zoom-group" class="pdf-toolbar-group">
-                    <button type="button" id="btn-pdf-zoom-out" class="btn-action btn-compact" title="Thu nhỏ">
+                    <button type="button" id="btn-pdf-zoom-out" class="btn-action btn-compact" title="Thu nhỏ (Giảm %)">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         <line x1="8" y1="11" x2="14" y2="11"></line>
                       </svg>
                     </button>
-                    <span id="pdf-zoom-percent" class="pdf-zoom-text">100%</span>
-                    <button type="button" id="btn-pdf-zoom-in" class="btn-action btn-compact" title="Phóng to">
+                    <span class="pdf-zoom-container">
+                      <input type="number" id="input-pdf-zoom" class="pdf-zoom-input" value="100" min="20" max="500" step="5" aria-label="Tỷ lệ thu phóng PDF" title="Gõ số % và nhấn Enter">%
+                    </span>
+                    <button type="button" id="btn-pdf-zoom-in" class="btn-action btn-compact" title="Phóng to (Tăng %)">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -1093,7 +1122,7 @@
       const btnPdfZoomOut = document.getElementById('btn-pdf-zoom-out');
       const btnPdfZoomIn = document.getElementById('btn-pdf-zoom-in');
       const btnPdfFitPage = document.getElementById('btn-pdf-fit-page');
-      const pdfZoomPercent = document.getElementById('pdf-zoom-percent');
+      const inputPdfZoom = document.getElementById('input-pdf-zoom');
       const pdfCanvasContainer = document.getElementById('pdf-canvas-container');
       const pdfLoadingIndicator = document.getElementById('pdf-loading-indicator');
       const pdfLoadingText = document.getElementById('pdf-loading-text');
@@ -1570,7 +1599,7 @@
             inputPdfPage.max = String(currentPdfDoc.numPages);
           }
           if (pdfTotalPages) pdfTotalPages.textContent = currentPdfDoc.numPages;
-          if (pdfZoomPercent) pdfZoomPercent.textContent = Math.round(currentPdfScale * 100) + '%';
+          if (inputPdfZoom) inputPdfZoom.value = Math.round(currentPdfScale * 100);
 
           if (btnPdfPrev) btnPdfPrev.disabled = (pageNum <= 1);
           if (btnPdfNext) btnPdfNext.disabled = (pageNum >= currentPdfDoc.numPages);
@@ -2139,10 +2168,46 @@
           }
         });
 
+        // Xử lý thu phóng PDF tùy chỉnh qua ô nhập số %
+        function applyCustomPdfZoom() {
+          if (!currentPdfDoc || isPdfRendering) return;
+          let targetPercent = parseInt(inputPdfZoom.value, 10);
+          if (isNaN(targetPercent) || targetPercent <= 0) {
+            inputPdfZoom.value = Math.round(currentPdfScale * 100);
+            return;
+          }
+          // Giới hạn tỷ lệ thu phóng an toàn từ 20% đến 500%
+          if (targetPercent < 20) targetPercent = 20;
+          if (targetPercent > 500) targetPercent = 500;
+
+          isPdfFitPageMode = false;
+          currentPdfScale = Number((targetPercent / 100).toFixed(2));
+          inputPdfZoom.value = targetPercent;
+          renderPdfPage(currentPdfPageNum);
+        }
+
+        if (inputPdfZoom) {
+          inputPdfZoom.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              applyCustomPdfZoom();
+              inputPdfZoom.blur();
+            }
+          });
+
+          inputPdfZoom.addEventListener('change', () => {
+            applyCustomPdfZoom();
+          });
+        }
+
         btnPdfZoomOut.addEventListener('click', () => {
           if (currentPdfDoc && !isPdfRendering) {
             isPdfFitPageMode = false;
-            currentPdfScale = Math.max(0.3, Number((currentPdfScale - 0.2).toFixed(2)));
+            const currentPct = Math.round(currentPdfScale * 100);
+            let targetPct = Math.max(20, Math.ceil((currentPct - 15) / 10) * 10);
+            if (targetPct >= currentPct) targetPct = Math.max(20, currentPct - 10);
+            currentPdfScale = Number((targetPct / 100).toFixed(2));
+            if (inputPdfZoom) inputPdfZoom.value = targetPct;
             renderPdfPage(currentPdfPageNum);
           }
         });
@@ -2150,7 +2215,11 @@
         btnPdfZoomIn.addEventListener('click', () => {
           if (currentPdfDoc && !isPdfRendering) {
             isPdfFitPageMode = false;
-            currentPdfScale = Math.min(4.0, Number((currentPdfScale + 0.2).toFixed(2)));
+            const currentPct = Math.round(currentPdfScale * 100);
+            let targetPct = Math.min(500, Math.floor((currentPct + 15) / 10) * 10);
+            if (targetPct <= currentPct) targetPct = Math.min(500, currentPct + 10);
+            currentPdfScale = Number((targetPct / 100).toFixed(2));
+            if (inputPdfZoom) inputPdfZoom.value = targetPct;
             renderPdfPage(currentPdfPageNum);
           }
         });
