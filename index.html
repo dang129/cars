@@ -1,552 +1,1335 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trình Duyệt Tập Tin GitHub - Dương Tấn Chánh</title>
+  <style>
+    /* 1. Thiết lập lại và Box-sizing */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    <title>GitHub File Explorer</title>
+    /* 2. Biến CSS - 4 màu chủ đạo chuẩn mực */
+    :root {
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --border-color: #cbd5e1;
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+      --radius-sm: 0.25rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
 
-        body {
-            margin: 0;
-            padding: 30px;
-            font-family: Arial, sans-serif;
-            background: #0d1117;
-            color: #c9d1d9;
-        }
+      --pad-xs: 0.25rem;
+      --pad-sm: 0.5rem;
+      --pad-md: 1rem;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: auto;
-        }
+    /* 3. Bố cục tổng quan trang */
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 1.2rem;
+      font-weight: normal;
+      line-height: 1.6;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      padding: 0.5rem 0.5rem 5rem 0.5rem;
+      width: 100%;
+      min-height: 100vh;
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
 
-        h1 {
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: bold;
+      text-align: center;
+      color: var(--text-main);
+      margin-bottom: 0.25rem;
+    }
 
-        .repo-info {
-            color: #8b949e;
-            margin-bottom: 20px;
-        }
+    h2 {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
 
-        .tree {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 15px;
-        }
+    h3 {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
 
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+    h4 {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
 
-        ul ul {
-            padding-left: 24px;
-        }
+    p {
+      font-size: 1.2rem;
+      font-weight: normal;
+      margin-bottom: 0.5rem;
+    }
 
-        li {
-            margin: 2px 0;
-        }
+    a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
 
-        .item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+    a:hover {
+      text-decoration: underline;
+    }
 
-            padding: 7px 8px;
+    button, select, input, textarea {
+      font-family: inherit;
+      font-size: 1.2rem;
+      font-weight: normal;
+      color: var(--text-main);
+    }
 
-            border-radius: 5px;
+    svg {
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
 
-            cursor: pointer;
+    /* 4. Khối giao diện chuyên biệt */
+    .author-block {
+      text-align: right;
+      font-size: 1.2rem;
+      font-style: normal;
+      font-weight: normal;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      padding-right: 0.5rem;
+    }
 
-            user-select: none;
-        }
+    .main-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+    }
 
-        .item:hover {
-            background: #21262d;
-        }
+    .card-block {
+      background-color: var(--bg-surface);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      width: 100%;
+    }
 
-        .arrow {
-            width: 16px;
-            color: #8b949e;
-            transition: transform 0.15s;
-        }
+    /* Khối cấu hình Repository */
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
 
-        .folder.open > .item .arrow {
-            transform: rotate(90deg);
-        }
+    @media (min-width: 768px) {
+      .config-grid {
+        grid-template-columns: 1.5fr 1.5fr 2fr auto;
+      }
+    }
 
-        .icon {
-            width: 20px;
-        }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
 
-        .folder-name {
-            color: #79c0ff;
-        }
+    .form-label {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--text-main);
+    }
 
-        .file-name {
-            color: #c9d1d9;
-        }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+    }
 
-        .children {
-            display: none;
-        }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
 
-        .folder.open > .children {
-            display: block;
-        }
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+    }
 
-        .loading {
-            color: #8b949e;
-        }
+    .btn-action:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
 
-        .error {
-            color: #f85149;
-        }
+    .btn-action:active {
+      background-color: var(--bg-page);
+    }
 
-        .file-info {
-            margin-top: 20px;
+    .btn-compact {
+      padding: 0.25rem 0.5rem;
+      font-size: 1.1rem;
+    }
 
-            background: #161b22;
-            border: 1px solid #30363d;
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--bg-surface);
+      border-color: var(--primary-color);
+      font-weight: bold;
+    }
 
-            border-radius: 8px;
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+      color: var(--bg-surface);
+    }
 
-            padding: 15px;
+    /* Thanh điều hướng Breadcrumb và Tìm kiếm */
+    .nav-bar-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+    }
 
-            display: none;
-        }
+    @media (min-width: 768px) {
+      .nav-bar-grid {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
 
-        .file-info h3 {
-            margin-top: 0;
-        }
+    .breadcrumb-trail {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 1.15rem;
+    }
 
-        .file-info a {
-            color: #58a6ff;
-        }
+    .breadcrumb-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-page);
+      cursor: pointer;
+      white-space: nowrap;
+    }
 
-        .size {
-            color: #8b949e;
-            font-size: 14px;
-        }
-    </style>
+    .breadcrumb-item:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .breadcrumb-separator {
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    .breadcrumb-current-label {
+      font-weight: bold;
+      color: var(--text-main);
+    }
+
+    .search-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* Khối không gian làm việc chính 2 cột */
+    .workspace-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    @media (min-width: 992px) {
+      .workspace-layout {
+        grid-template-columns: 1fr 1.2fr;
+      }
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* Cây thư mục */
+    .tree-scroll-box {
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+      min-height: 480px;
+      max-height: 640px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .tree-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .tree-sub-list {
+      list-style: none;
+      padding-left: 1.2rem;
+      margin: 0;
+      display: none;
+    }
+
+    .tree-node.open > .tree-sub-list {
+      display: block;
+    }
+
+    .tree-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease;
+      margin-bottom: 0.15rem;
+      border: 2px solid transparent;
+    }
+
+    .tree-row:hover {
+      background-color: var(--bg-page);
+      border-color: var(--border-color);
+    }
+
+    .tree-row.active {
+      background-color: #eff6ff;
+      border-color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    .arrow-icon {
+      width: 1rem;
+      height: 1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+    }
+
+    .tree-node.open > .tree-row .arrow-icon {
+      transform: rotate(90deg);
+    }
+
+    .bullet-placeholder {
+      opacity: 0;
+    }
+
+    .folder-title {
+      color: var(--text-main);
+      font-weight: bold;
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-title {
+      color: var(--text-main);
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-size-tag {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .tree-footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.5rem;
+      font-size: 1.1rem;
+      color: var(--text-muted);
+    }
+
+    /* Bảng chi tiết và xem trước */
+    .details-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+      min-height: 480px;
+      padding: 1rem;
+    }
+
+    .file-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+      background-color: var(--bg-page);
+      font-size: 1.1rem;
+    }
+
+    @media (min-width: 600px) {
+      .file-meta-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .meta-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .meta-label {
+      font-weight: bold;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .meta-value {
+      color: var(--text-main);
+      word-break: break-all;
+    }
+
+    .text-bold {
+      font-weight: bold;
+    }
+
+    .file-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .preview-box-wrapper {
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background-color: var(--bg-page);
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+    }
+
+    .preview-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-bottom: 2px solid var(--border-color);
+      background-color: var(--bg-surface);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .preview-code-content {
+      padding: 0.5rem;
+      max-height: 400px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 1.05rem;
+      line-height: 1.5;
+      background-color: var(--bg-surface);
+      white-space: pre;
+    }
+
+    .preview-image-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      max-height: 400px;
+      overflow: auto;
+      background-color: var(--bg-surface);
+    }
+
+    .preview-image-tag {
+      max-width: 100%;
+      max-height: 360px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      object-fit: contain;
+    }
+
+    .state-message-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      min-height: 250px;
+    }
+
+    .state-error {
+      color: #dc2626;
+      background-color: #fef2f2;
+      border: 2px solid #fecaca;
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin: 0.5rem;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-page);
+      font-size: 1.1rem;
+      white-space: nowrap;
+    }
+
+
+    .display-none {
+      display: none;
+    }
+
+    .file-active-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Thông báo Toast */
+    .notification-toast {
+      display: none;
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      background-color: var(--text-main);
+      color: var(--bg-surface);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--text-main);
+      font-size: 1.2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .notification-toast.show {
+      display: block;
+    }
+  </style>
 </head>
-
-
 <body>
+  <!-- Tiêu đề và Thông tin tác giả -->
+  <header id="header-section">
+    <h1 id="main-title">Trình Duyệt Tập Tin GitHub</h1>
+    <div id="author-info" class="author-block">Dương Tấn Chánh</div>
+  </header>
 
-<div class="container">
-
-    <h1>📂 GitHub File Explorer</h1>
-
-    <div class="repo-info">
-        Repository:
-        <strong>dang129/cars</strong>
-        /
-        <strong>downloads</strong>
-    </div>
-
-    <div id="tree" class="tree">
-        <div class="loading">
-            ⏳ Đang tải...
+  <main id="main-content" class="main-layout">
+    <!-- Khối Cấu Hình Kho Lưu Trữ (Repository Configuration) -->
+    <section id="config-section" class="card-block" aria-label="Cấu hình kho lưu trữ GitHub">
+      <div id="config-inputs-grid" class="config-grid">
+        <div id="group-owner" class="form-group">
+          <label for="input-owner" class="form-label">Tài khoản / Tổ chức (Owner):</label>
+          <input type="text" id="input-owner" class="form-input" value="dang129" placeholder="ví dụ: dang129">
         </div>
-    </div>
 
-    <div id="fileInfo" class="file-info"></div>
+        <div id="group-repo" class="form-group">
+          <label for="input-repo" class="form-label">Tên kho lưu trữ (Repo):</label>
+          <input type="text" id="input-repo" class="form-input" value="cars" placeholder="ví dụ: cars">
+        </div>
 
-</div>
+        <div id="group-path" class="form-group">
+          <label for="input-path" class="form-label">Đường dẫn thư mục (Path):</label>
+          <input type="text" id="input-path" class="form-input" value="downloads" placeholder="để trống nếu muốn duyệt từ gốc">
+        </div>
 
+        <div id="group-action-btn" class="form-group">
+          <button type="button" id="btn-fetch-repo" class="btn-action btn-primary" title="Tải dữ liệu cây thư mục từ GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
+            <span>Duyệt kho</span>
+          </button>
+        </div>
+      </div>
 
-<script>
+      <!-- Thanh Breadcrumb và Tìm kiếm nhanh -->
+      <div id="nav-and-filter-bar" class="nav-bar-grid">
+        <nav id="breadcrumb-navigation" class="breadcrumb-trail" aria-label="Đường dẫn thư mục hiện tại">
+          <span id="breadcrumb-root" class="breadcrumb-item" title="Về thư mục gốc">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            </svg>
+            <span>Gốc</span>
+          </span>
+          <span class="breadcrumb-separator">/</span>
+          <span id="breadcrumb-current-text" class="breadcrumb-current-label">downloads</span>
+        </nav>
 
+        <div id="search-filter-box" class="search-wrapper">
+          <input type="text" id="input-search-filter" class="form-input" placeholder="Lọc theo tên tập tin / thư mục..." aria-label="Lọc theo tên">
+          <button type="button" id="btn-clear-search" class="btn-action" title="Xoá tìm kiếm">Xoá</button>
+        </div>
+      </div>
+    </section>
 
-// ============================================================
-// CẤU HÌNH
-// ============================================================
+    <!-- Khối không gian làm việc chính 2 cột -->
+    <section id="workspace-section" class="workspace-layout" aria-label="Khu vực cây thư mục và xem trước">
+      <!-- Cột Trái: Cây Thư Mục & Tập Tin (Tree View) -->
+      <div id="tree-column-card" class="card-block">
+        <div id="tree-header-bar" class="panel-header">
+          <h2 id="tree-heading">Cây Thư Mục &amp; Tập Tin</h2>
+          <div id="tree-actions-toolbar" class="panel-actions">
+            <button type="button" id="btn-expand-all" class="btn-action btn-compact" title="Mở rộng các thư mục đã nạp">Mở tất cả</button>
+            <button type="button" id="btn-collapse-all" class="btn-action btn-compact" title="Thu gọn các thư mục">Thu gọn</button>
+            <button type="button" id="btn-refresh-tree" class="btn-action btn-compact" title="Làm mới dữ liệu">Làm mới</button>
+          </div>
+        </div>
 
-const owner = "dang129";
+        <div id="tree-container" class="tree-scroll-box">
+          <div id="tree-status-message" class="state-message-box">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <p>Đang chuẩn bị tải dữ liệu từ GitHub...</p>
+          </div>
+          <ul id="root-tree-list" class="tree-list display-none"></ul>
+        </div>
 
-const repo = "cars";
+        <div id="tree-footer-info" class="tree-footer-bar">
+          <span id="status-item-count">0 mục</span>
+          <span id="status-api-info" class="badge-status">GitHub REST API v3</span>
+        </div>
+      </div>
 
-const rootPath = "downloads";
+      <!-- Cột Phải: Chi Tiết Tập Tin & Xem Trước Trực Tiếp (File Details & Preview) -->
+      <div id="preview-column-card" class="card-block">
+        <div id="preview-header-bar" class="panel-header">
+          <h2 id="preview-heading">Chi Tiết &amp; Xem Trước</h2>
+          <div id="preview-actions-toolbar" class="panel-actions">
+            <button type="button" id="btn-copy-download-url" class="btn-action btn-compact display-none" title="Sao chép liên kết tải về">Sao chép link</button>
+            <button type="button" id="btn-direct-download" class="btn-action btn-primary btn-compact display-none" title="Tải tập tin về máy">Tải xuống</button>
+          </div>
+        </div>
 
+        <div id="file-details-container" class="details-container">
+          <div id="empty-selection-placeholder" class="state-message-box">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <p><strong>Chưa chọn tập tin nào</strong></p>
+            <p>Hãy bấm vào một tập tin bất kỳ trong cây thư mục bên trái để xem thông tin chi tiết và nội dung xem trước.</p>
+          </div>
 
-// ============================================================
-// GitHub API
-// ============================================================
-
-async function getGitHubContents(path) {
-
-    const encodedPath = path
-        .split("/")
-        .map(encodeURIComponent)
-        .join("/");
-
-    const url =
-        `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-
-        throw new Error(
-            `GitHub API trả về HTTP ${response.status}`
-        );
-
-    }
-
-    return await response.json();
-}
-
-
-// ============================================================
-// LOAD ROOT FOLDER
-// ============================================================
-
-async function loadRoot() {
-
-    const tree = document.getElementById("tree");
-
-    try {
-
-        const items = await getGitHubContents(rootPath);
-
-        tree.innerHTML = "";
-
-        const ul = document.createElement("ul");
-
-        sortItems(items);
-
-        for (const item of items) {
-
-            const li = createItem(item);
-
-            ul.appendChild(li);
-
-        }
-
-        tree.appendChild(ul);
-
-    } catch (error) {
-
-        tree.innerHTML = `
-            <div class="error">
-                ❌ Không thể tải thư mục
-                <br>
-                ${escapeHtml(error.message)}
+          <div id="active-file-content-area" class="file-active-column display-none">
+            <!-- Bảng thông tin tập tin -->
+            <div id="file-meta-panel" class="file-meta-grid">
+              <div class="meta-row">
+                <span class="meta-label">Tên tập tin:</span>
+                <span id="meta-file-name" class="meta-value text-bold">-</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Kích thước:</span>
+                <span id="meta-file-size" class="meta-value">-</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Đường dẫn đầy đủ:</span>
+                <span id="meta-file-path" class="meta-value">-</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Loại tập tin:</span>
+                <span id="meta-file-type" class="meta-value">-</span>
+              </div>
             </div>
-        `;
 
-    }
+            <!-- Các liên kết thao tác -->
+            <div id="file-external-links-row" class="file-actions-row">
+              <a id="link-github-repo" href="#" target="_blank" rel="noopener noreferrer" class="btn-action btn-compact">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                <span>Mở trên GitHub</span>
+              </a>
 
-}
+              <a id="link-raw-download" href="#" target="_blank" rel="noopener noreferrer" class="btn-action btn-compact">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Tải trực tiếp</span>
+              </a>
+
+              <button type="button" id="btn-copy-content" class="btn-action btn-compact" title="Sao chép nội dung văn bản">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                </svg>
+                <span>Sao chép nội dung</span>
+              </button>
+            </div>
+
+            <!-- Khung hiển thị nội dung xem trước -->
+            <div id="preview-box-container" class="preview-box-wrapper">
+              <div id="preview-box-title-bar" class="preview-box-header">
+                <span id="preview-box-title">Nội dung xem trước</span>
+                <span id="preview-box-type-badge" class="badge-status">Văn bản</span>
+              </div>
+              <div id="preview-content-display">
+                <pre id="preview-code-text" class="preview-code-content">Đang nạp nội dung...</pre>
+                <div id="preview-image-wrapper" class="preview-image-content display-none">
+                  <img id="preview-img-element" class="preview-image-tag" src="" alt="Xem trước hình ảnh" referrerpolicy="no-referrer">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
 
-// ============================================================
-// CREATE FILE / FOLDER ITEM
-// ============================================================
+  </main>
 
-function createItem(item) {
+  <!-- Thông báo Toast nổi -->
+  <div id="toast-notification" class="notification-toast" role="alert"></div>
 
-    const li = document.createElement("li");
+  <!-- JavaScript xử lý toàn bộ logic ứng dụng -->
+  <script>
+    (function () {
+      'use strict';
 
+      // Định dạng dung lượng theo chuẩn Việt Nam
+      function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        const num = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+        const formattedNum = new Intl.NumberFormat('vi-VN').format(num);
+        return formattedNum + ' ' + sizes[i];
+      }
 
-    // ========================================================
-    // FOLDER
-    // ========================================================
+      // Escape HTML để tránh lỗi bảo mật XSS
+      function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
 
-    if (item.type === "dir") {
+      // Xác định loại tập tin theo phần mở rộng
+      function getFileTypeInfo(fileName) {
+        const ext = (fileName.split('.').pop() || '').toLowerCase();
+        const codeExts = ['js', 'jsx', 'ts', 'tsx', 'html', 'htm', 'css', 'scss', 'json', 'xml', 'svg', 'md', 'py', 'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'sh', 'yaml', 'yml', 'sql', 'txt', 'log', 'ini', 'env'];
+        const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg'];
+        const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac'];
+        const videoExts = ['mp4', 'webm', 'mov', 'mkv'];
+        const archiveExts = ['zip', 'rar', 'tar', 'gz', '7z'];
 
-        li.className = "folder";
+        if (imageExts.includes(ext)) return { category: 'image', ext: ext, label: 'Hình ảnh (' + ext.toUpperCase() + ')' };
+        if (codeExts.includes(ext)) return { category: 'code', ext: ext, label: 'Mã nguồn / Văn bản (' + ext.toUpperCase() + ')' };
+        if (audioExts.includes(ext)) return { category: 'audio', ext: ext, label: 'Âm thanh (' + ext.toUpperCase() + ')' };
+        if (videoExts.includes(ext)) return { category: 'video', ext: ext, label: 'Video (' + ext.toUpperCase() + ')' };
+        if (archiveExts.includes(ext)) return { category: 'archive', ext: ext, label: 'Tập tin nén (' + ext.toUpperCase() + ')' };
+        return { category: 'binary', ext: ext, label: 'Tập tin nhị phân (' + (ext ? ext.toUpperCase() : 'Không rõ') + ')' };
+      }
 
-        const row = document.createElement("div");
+      // Tạo SVG Icon tương ứng cho thư mục và loại tập tin
+      function getFileSvgIcon(type, fileName) {
+        if (type === 'dir') {
+          return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+          </svg>`;
+        }
+        const fileInfo = getFileTypeInfo(fileName || '');
+        if (fileInfo.category === 'image') {
+          return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+            <circle cx="9" cy="9" r="2"></circle>
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+          </svg>`;
+        }
+        if (fileInfo.category === 'code') {
+          return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>`;
+        }
+        if (fileInfo.category === 'archive') {
+          return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 8v13H3V8"></path>
+            <path d="M1 3h22v5H1z"></path>
+            <path d="M10 12h4"></path>
+          </svg>`;
+        }
+        return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>`;
+      }
 
-        row.className = "item";
+      // Các phần tử DOM
+      const inputOwner = document.getElementById('input-owner');
+      const inputRepo = document.getElementById('input-repo');
+      const inputPath = document.getElementById('input-path');
+      const btnFetchRepo = document.getElementById('btn-fetch-repo');
+      const inputSearchFilter = document.getElementById('input-search-filter');
+      const btnClearSearch = document.getElementById('btn-clear-search');
+      const breadcrumbRoot = document.getElementById('breadcrumb-root');
+      const breadcrumbCurrentText = document.getElementById('breadcrumb-current-text');
+      const rootTreeList = document.getElementById('root-tree-list');
+      const treeStatusMessage = document.getElementById('tree-status-message');
+      const statusItemCount = document.getElementById('status-item-count');
+      const btnExpandAll = document.getElementById('btn-expand-all');
+      const btnCollapseAll = document.getElementById('btn-collapse-all');
+      const btnRefreshTree = document.getElementById('btn-refresh-tree');
 
-        row.innerHTML = `
-            <span class="arrow">▶</span>
-            <span class="icon">📁</span>
-            <span class="folder-name">
-                ${escapeHtml(item.name)}
-            </span>
-        `;
+      const emptySelectionPlaceholder = document.getElementById('empty-selection-placeholder');
+      const activeFileContentArea = document.getElementById('active-file-content-area');
+      const metaFileName = document.getElementById('meta-file-name');
+      const metaFileSize = document.getElementById('meta-file-size');
+      const metaFilePath = document.getElementById('meta-file-path');
+      const metaFileType = document.getElementById('meta-file-type');
+      const linkGithubRepo = document.getElementById('link-github-repo');
+      const linkRawDownload = document.getElementById('link-raw-download');
+      const btnCopyContent = document.getElementById('btn-copy-content');
+      const btnCopyDownloadUrl = document.getElementById('btn-copy-download-url');
+      const btnDirectDownload = document.getElementById('btn-direct-download');
+      const previewCodeText = document.getElementById('preview-code-text');
+      const previewImageWrapper = document.getElementById('preview-image-wrapper');
+      const previewImgElement = document.getElementById('preview-img-element');
+      const previewBoxTitle = document.getElementById('preview-box-title');
+      const previewBoxTypeBadge = document.getElementById('preview-box-type-badge');
 
+      const toastNotification = document.getElementById('toast-notification');
 
-        const children = document.createElement("div");
+      let currentActiveRow = null;
+      let currentLoadedFileRawText = '';
+      let currentLoadedFileItem = null;
+      let totalLoadedItems = 0;
 
-        children.className = "children";
+      // Hiển thị Toast
+      function showToast(message) {
+        if (!toastNotification) return;
+        toastNotification.textContent = message;
+        toastNotification.classList.add('show');
+        setTimeout(() => {
+          toastNotification.classList.remove('show');
+        }, 3000);
+      }
 
+      // Gọi GitHub REST API
+      async function fetchGitHubContents(owner, repo, path) {
+        const cleanPath = (path || '').trim().replace(/^\/+|\/+$/g, '');
+        const encodedPath = cleanPath.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+        const url = encodedPath
+          ? `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodedPath}`
+          : `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents`;
 
-        row.addEventListener("click", async () => {
+        const response = await fetch(url);
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error(`Không tìm thấy kho lưu trữ hoặc đường dẫn "${cleanPath || 'gốc'}" (Mã lỗi 404).`);
+          } else if (response.status === 403) {
+            throw new Error(`Đã vượt quá giới hạn lượt truy cập tạm thời của GitHub API (Mã lỗi 403). Vui lòng thử lại sau.`);
+          } else {
+            throw new Error(`GitHub API phản hồi mã lỗi HTTP ${response.status}: ${response.statusText}`);
+          }
+        }
+        return await response.json();
+      }
 
-            const isOpen = li.classList.contains("open");
+      // Sắp xếp thư mục trước, tập tin sau và theo bảng chữ cái
+      function sortTreeItems(items) {
+        if (!Array.isArray(items)) return [];
+        return items.sort((a, b) => {
+          if (a.type === 'dir' && b.type !== 'dir') return -1;
+          if (a.type !== 'dir' && b.type === 'dir') return 1;
+          return (a.name || '').localeCompare(b.name || '', 'vi', { numeric: true, sensitivity: 'base' });
+        });
+      }
 
+      // Cập nhật đường dẫn Breadcrumb
+      function updateBreadcrumb(path) {
+        const clean = (path || '').trim().replace(/^\/+|\/+$/g, '');
+        if (breadcrumbCurrentText) {
+          breadcrumbCurrentText.textContent = clean ? clean : '(Thư mục gốc)';
+        }
+      }
 
-            // Nếu đang mở thì đóng
+      // Tạo một phần tử Node trong cây
+      function createTreeNodeElement(item) {
+        const li = document.createElement('li');
+        li.className = 'tree-node ' + (item.type === 'dir' ? 'folder-node' : 'file-node');
+        li.setAttribute('data-name', (item.name || '').toLowerCase());
+        li.setAttribute('data-path', item.path || '');
+
+        const row = document.createElement('div');
+        row.className = 'tree-row';
+        row.tabIndex = 0;
+
+        if (item.type === 'dir') {
+          row.innerHTML = `
+            <span class="arrow-icon">&#9654;</span>
+            <span class="type-icon">${getFileSvgIcon('dir', item.name)}</span>
+            <span class="folder-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+          `;
+
+          const subUl = document.createElement('ul');
+          subUl.className = 'tree-sub-list';
+
+          // Sự kiện mở / đóng thư mục
+          row.addEventListener('click', async () => {
+            const isOpen = li.classList.contains('open');
             if (isOpen) {
-
-                li.classList.remove("open");
-
-                return;
-
+              li.classList.remove('open');
+              return;
             }
 
+            if (!subUl.dataset.loaded) {
+              subUl.innerHTML = '<li class="badge-status">Đang nạp...</li>';
+              li.classList.add('open');
 
-            // Nếu chưa tải nội dung
-            if (!children.dataset.loaded) {
-
-                children.innerHTML = `
-                    <div class="loading">
-                        ⏳ Đang tải...
-                    </div>
-                `;
-
-
-                li.classList.add("open");
-
-
-                try {
-
-                    const items =
-                        await getGitHubContents(item.path);
-
-                    children.innerHTML = "";
-
-                    const ul = document.createElement("ul");
-
-                    sortItems(items);
-
-                    for (const child of items) {
-
-                        ul.appendChild(
-                            createItem(child)
-                        );
-
-                    }
-
-                    children.appendChild(ul);
-
-                    children.dataset.loaded = "true";
-
-                } catch (error) {
-
-                    children.innerHTML = `
-                        <div class="error">
-                            ❌ ${escapeHtml(error.message)}
-                        </div>
-                    `;
-
+              try {
+                const subItems = await fetchGitHubContents(inputOwner.value.trim(), inputRepo.value.trim(), item.path);
+                subUl.innerHTML = '';
+                if (Array.isArray(subItems) && subItems.length > 0) {
+                  sortTreeItems(subItems);
+                  subItems.forEach((subItem) => {
+                    subUl.appendChild(createTreeNodeElement(subItem));
+                    totalLoadedItems++;
+                  });
+                } else {
+                  subUl.innerHTML = '<li class="file-size-tag"><em>(Thư mục trống)</em></li>';
                 }
-
+                subUl.dataset.loaded = 'true';
+                updateItemCount();
+              } catch (subError) {
+                subUl.innerHTML = `<li class="state-error">Lỗi: ${escapeHtml(subError.message)}</li>`;
+              }
             } else {
-
-                li.classList.add("open");
-
+              li.classList.add('open');
             }
+          });
 
-        });
+          // Hỗ trợ bàn phím Enter / Space
+          row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              row.click();
+            }
+          });
 
+          li.appendChild(row);
+          li.appendChild(subUl);
+        } else {
+          // Tập tin
+          const formattedSize = formatBytes(item.size);
+          row.innerHTML = `
+            <span class="arrow-icon bullet-placeholder">&bull;</span>
+            <span class="type-icon">${getFileSvgIcon('file', item.name)}</span>
+            <span class="file-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+            <span class="file-size-tag">${formattedSize}</span>
+          `;
 
-        li.appendChild(row);
+          row.addEventListener('click', () => {
+            if (currentActiveRow) {
+              currentActiveRow.classList.remove('active');
+            }
+            row.classList.add('active');
+            currentActiveRow = row;
+            loadFileDetails(item);
+          });
 
-        li.appendChild(children);
+          row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              row.click();
+            }
+          });
 
-    }
+          li.appendChild(row);
+        }
 
+        return li;
+      }
 
-    // ========================================================
-    // FILE
-    // ========================================================
+      // Nạp thông tin chi tiết và nội dung xem trước của tập tin
+      async function loadFileDetails(item) {
+        currentLoadedFileItem = item;
+        emptySelectionPlaceholder.classList.add('display-none');
+        activeFileContentArea.classList.remove('display-none');
 
-    else {
+        metaFileName.textContent = item.name || 'Không có tên';
+        metaFileSize.textContent = formatBytes(item.size);
+        metaFilePath.textContent = item.path || '-';
 
-        li.className = "file";
+        const fileTypeInfo = getFileTypeInfo(item.name || '');
+        metaFileType.textContent = fileTypeInfo.label;
 
-        const row = document.createElement("div");
+        if (linkGithubRepo) {
+          linkGithubRepo.href = item.html_url || '#';
+        }
 
-        row.className = "item";
+        if (linkRawDownload) {
+          linkRawDownload.href = item.download_url || '#';
+        }
 
-        row.innerHTML = `
-            <span class="arrow"></span>
-            <span class="icon">📄</span>
-            <span class="file-name">
-                ${escapeHtml(item.name)}
-            </span>
+        if (item.download_url) {
+          btnCopyDownloadUrl.classList.remove('display-none');
+          btnDirectDownload.classList.remove('display-none');
+        } else {
+          btnCopyDownloadUrl.classList.add('display-none');
+          btnDirectDownload.classList.add('display-none');
+        }
+
+        previewBoxTitle.textContent = `Xem trước: ${item.name}`;
+        previewBoxTypeBadge.textContent = fileTypeInfo.label;
+
+        // Xử lý xem trước hình ảnh
+        if (fileTypeInfo.category === 'image' && item.download_url) {
+          previewCodeText.classList.add('display-none');
+          previewImageWrapper.classList.remove('display-none');
+          previewImgElement.src = item.download_url;
+          currentLoadedFileRawText = `[Tập tin hình ảnh: ${item.name} - ${item.download_url}]`;
+          return;
+        }
+
+        // Xử lý xem trước mã nguồn / văn bản
+        previewImageWrapper.classList.add('display-none');
+        previewCodeText.classList.remove('display-none');
+
+        if (!item.download_url) {
+          previewCodeText.textContent = 'Không có đường dẫn tải trực tiếp nội dung cho tập tin này.';
+          currentLoadedFileRawText = '';
+          return;
+        }
+
+        // Nếu tập tin quá lớn (> 2MB)
+        if (item.size > 2 * 1024 * 1024) {
+          previewCodeText.textContent = `Tập tin có dung lượng lớn (${formatBytes(item.size)}). Hãy bấm nút "Tải trực tiếp" hoặc "Mở trên GitHub" để xem.`;
+          currentLoadedFileRawText = '';
+          return;
+        }
+
+        previewCodeText.textContent = 'Đang tải nội dung văn bản từ GitHub...';
+
+        try {
+          const res = await fetch(item.download_url);
+          if (!res.ok) {
+            throw new Error(`Không thể nạp nội dung (HTTP ${res.status})`);
+          }
+          const text = await res.text();
+          currentLoadedFileRawText = text;
+          previewCodeText.textContent = text;
+        } catch (fetchErr) {
+          previewCodeText.textContent = `Lỗi khi tải nội dung tập tin: ${fetchErr.message}`;
+          currentLoadedFileRawText = '';
+        }
+      }
+
+      // Cập nhật số lượng mục
+      function updateItemCount() {
+        if (statusItemCount) {
+          statusItemCount.textContent = `${new Intl.NumberFormat('vi-VN').format(totalLoadedItems)} mục`;
+        }
+      }
+
+      // Tải cây thư mục gốc
+      async function loadRepositoryRoot() {
+        const owner = inputOwner.value.trim();
+        const repo = inputRepo.value.trim();
+        const path = inputPath.value.trim();
+
+        if (!owner || !repo) {
+          showToast('Vui lòng nhập đầy đủ Chủ sở hữu (Owner) và Tên kho lưu trữ (Repo)!');
+          return;
+        }
+
+        updateBreadcrumb(path);
+        rootTreeList.classList.add('display-none');
+        rootTreeList.innerHTML = '';
+        treeStatusMessage.classList.remove('display-none');
+        treeStatusMessage.innerHTML = `
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+          </svg>
+          <p>Đang tải danh sách tập tin từ <strong>${escapeHtml(owner)}/${escapeHtml(repo)}</strong>...</p>
         `;
 
+        totalLoadedItems = 0;
 
-        row.addEventListener("click", () => {
+        try {
+          const contents = await fetchGitHubContents(owner, repo, path);
 
-            showFileInfo(item);
+          // Nếu trả về là 1 tập tin duy nhất
+          if (!Array.isArray(contents) && contents.type === 'file') {
+            treeStatusMessage.classList.add('display-none');
+            rootTreeList.classList.remove('display-none');
+            rootTreeList.appendChild(createTreeNodeElement(contents));
+            totalLoadedItems = 1;
+            updateItemCount();
+            loadFileDetails(contents);
+            showToast('Đã nạp thông tin tập tin!');
+            return;
+          }
 
+          if (!Array.isArray(contents) || contents.length === 0) {
+            treeStatusMessage.classList.remove('display-none');
+            treeStatusMessage.innerHTML = `<p>Thư mục này hiện không có tập tin nào.</p>`;
+            updateItemCount();
+            return;
+          }
+
+          sortTreeItems(contents);
+          contents.forEach((item) => {
+            rootTreeList.appendChild(createTreeNodeElement(item));
+            totalLoadedItems++;
+          });
+
+          treeStatusMessage.classList.add('display-none');
+          rootTreeList.classList.remove('display-none');
+          updateItemCount();
+          showToast(`Đã nạp thành công ${contents.length} mục trong thư mục!`);
+        } catch (error) {
+          treeStatusMessage.classList.remove('display-none');
+          treeStatusMessage.innerHTML = `
+            <div class="state-error">
+              <strong>Lỗi tải kho lưu trữ:</strong><br>
+              ${escapeHtml(error.message)}
+            </div>
+          `;
+          updateItemCount();
+        }
+      }
+
+      // Lọc danh sách theo từ khoá tìm kiếm
+      function filterTreeNodes(keyword) {
+        const kw = (keyword || '').trim().toLowerCase();
+        const allNodes = rootTreeList.querySelectorAll('.tree-node');
+
+        if (!kw) {
+          allNodes.forEach(node => {
+            node.classList.remove('display-none');
+          });
+          return;
+        }
+
+        allNodes.forEach(node => {
+          const nodeName = node.getAttribute('data-name') || '';
+          if (nodeName.includes(kw)) {
+            node.classList.remove('display-none');
+            // Mở tất cả cha của node này
+            let parent = node.parentElement;
+            while (parent && parent !== rootTreeList) {
+              if (parent.classList.contains('tree-sub-list')) {
+                parent.parentElement.classList.add('open');
+              }
+              parent = parent.parentElement;
+            }
+          } else {
+            // Nếu là folder có con chứa keyword
+            const hasMatchingChild = node.querySelector(`[data-name*="${kw}"]`);
+            if (hasMatchingChild) {
+              node.classList.remove('display-none');
+            } else {
+              node.classList.add('display-none');
+            }
+          }
+        });
+      }
+
+      // Đăng ký các sự kiện tương tác
+      function initializeEvents() {
+        // Nút Duyệt kho
+        if (btnFetchRepo) {
+          btnFetchRepo.addEventListener('click', loadRepositoryRoot);
+        }
+
+        // Phím Enter trên các ô nhập liệu
+        [inputOwner, inputRepo, inputPath].forEach(inp => {
+          if (inp) {
+            inp.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                loadRepositoryRoot();
+              }
+            });
+          }
         });
 
-
-        li.appendChild(row);
-
-    }
-
-
-    return li;
-
-}
-
-
-// ============================================================
-// SHOW FILE INFO
-// ============================================================
-
-function showFileInfo(item) {
-
-    const info = document.getElementById("fileInfo");
-
-    const size = formatBytes(item.size);
-
-
-    info.style.display = "block";
-
-
-    info.innerHTML = `
-
-        <h3>📄 ${escapeHtml(item.name)}</h3>
-
-        <p>
-            <strong>Path:</strong>
-            ${escapeHtml(item.path)}
-        </p>
-
-        <p class="size">
-            Kích thước: ${size}
-        </p>
-
-        <p>
-            <a
-                href="${item.html_url}"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Mở trên GitHub ↗
-            </a>
-        </p>
-
-        <p>
-            <a
-                href="${item.download_url}"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Download file ↙
-            </a>
-        </p>
-
-    `;
-
-}
-
-
-// ============================================================
-// SORT
-// Folder trước, file sau
-// ============================================================
-
-function sortItems(items) {
-
-    items.sort((a, b) => {
-
-        // Folder trước
-        if (a.type === "dir" && b.type !== "dir") {
-            return -1;
+        // Tìm kiếm / lọc
+        if (inputSearchFilter) {
+          inputSearchFilter.addEventListener('input', (e) => {
+            filterTreeNodes(e.target.value);
+          });
         }
 
-        if (a.type !== "dir" && b.type === "dir") {
-            return 1;
-        }
-
-        // Alphabet
-        return a.name.localeCompare(
-            b.name,
-            undefined,
-            {
-                numeric: true,
-                sensitivity: "base"
+        if (btnClearSearch) {
+          btnClearSearch.addEventListener('click', () => {
+            if (inputSearchFilter) {
+              inputSearchFilter.value = '';
+              filterTreeNodes('');
             }
-        );
+          });
+        }
 
-    });
+        // Breadcrumb về gốc
+        if (breadcrumbRoot) {
+          breadcrumbRoot.addEventListener('click', () => {
+            inputPath.value = '';
+            loadRepositoryRoot();
+          });
+        }
 
-}
+        // Mở rộng tất cả
+        if (btnExpandAll) {
+          btnExpandAll.addEventListener('click', () => {
+            const allFolders = rootTreeList.querySelectorAll('.folder-node');
+            allFolders.forEach(folder => {
+              folder.classList.add('open');
+            });
+            showToast('Đã mở rộng tất cả các thư mục trong cây!');
+          });
+        }
 
+        // Thu gọn tất cả
+        if (btnCollapseAll) {
+          btnCollapseAll.addEventListener('click', () => {
+            const allFolders = rootTreeList.querySelectorAll('.folder-node');
+            allFolders.forEach(folder => {
+              folder.classList.remove('open');
+            });
+            showToast('Đã thu gọn tất cả thư mục!');
+          });
+        }
 
-// ============================================================
-// FORMAT FILE SIZE
-// ============================================================
+        // Làm mới cây
+        if (btnRefreshTree) {
+          btnRefreshTree.addEventListener('click', () => {
+            loadRepositoryRoot();
+          });
+        }
 
-function formatBytes(bytes) {
+        // Sao chép nội dung văn bản
+        if (btnCopyContent) {
+          btnCopyContent.addEventListener('click', () => {
+            if (!currentLoadedFileRawText) {
+              showToast('Không có nội dung văn bản để sao chép.');
+              return;
+            }
+            navigator.clipboard.writeText(currentLoadedFileRawText).then(() => {
+              showToast('Đã sao chép nội dung tập tin vào bộ nhớ tạm!');
+            }).catch(() => {
+              showToast('Không thể sao chép tự động.');
+            });
+          });
+        }
 
-    if (!bytes) {
-        return "0 Bytes";
-    }
+        // Sao chép URL tải trực tiếp
+        if (btnCopyDownloadUrl) {
+          btnCopyDownloadUrl.addEventListener('click', () => {
+            if (currentLoadedFileItem && currentLoadedFileItem.download_url) {
+              navigator.clipboard.writeText(currentLoadedFileItem.download_url).then(() => {
+                showToast('Đã sao chép liên kết tải xuống trực tiếp!');
+              });
+            }
+          });
+        }
 
-    const units = [
-        "Bytes",
-        "KB",
-        "MB",
-        "GB"
-    ];
+        // Tải xuống trực tiếp
+        if (btnDirectDownload) {
+          btnDirectDownload.addEventListener('click', () => {
+            if (currentLoadedFileItem && currentLoadedFileItem.download_url) {
+              const a = document.createElement('a');
+              a.href = currentLoadedFileItem.download_url;
+              a.download = currentLoadedFileItem.name || 'download';
+              a.target = '_blank';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              showToast(`Bắt đầu tải xuống: ${currentLoadedFileItem.name}`);
+            }
+          });
+        }
 
-    const index =
-        Math.floor(
-            Math.log(bytes) /
-            Math.log(1024)
-        );
+      }
 
-    return (
-        parseFloat(
-            (bytes / Math.pow(1024, index))
-                .toFixed(2)
-        )
-        + " "
-        + units[index]
-    );
-
-}
-
-
-// ============================================================
-// ESCAPE HTML
-// ============================================================
-
-function escapeHtml(text) {
-
-    return String(text)
-
-        .replaceAll("&", "&amp;")
-
-        .replaceAll("<", "&lt;")
-
-        .replaceAll(">", "&gt;")
-
-        .replaceAll('"', "&quot;")
-
-        .replaceAll("'", "&#039;");
-
-}
-
-
-// ============================================================
-// START
-// ============================================================
-
-loadRoot();
-
-</script>
-
+      // Khởi chạy chương trình
+      window.addEventListener('DOMContentLoaded', () => {
+        try {
+          initializeEvents();
+          loadRepositoryRoot();
+        } catch (initError) {
+          console.error('Lỗi khởi tạo chương trình:', initError);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
